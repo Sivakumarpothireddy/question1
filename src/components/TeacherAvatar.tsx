@@ -19,19 +19,19 @@ export const TeacherAvatar: React.FC<TeacherAvatarProps> = ({ narrationText, isV
 
   // Talking animation - mouth opens and closes
   const talkingCycle = Math.sin(frame * 0.5) * 0.5 + 0.5;
-  const mouthHeight = interpolate(talkingCycle, [0, 1], [2, 8]);
+  const mouthHeight = interpolate(talkingCycle, [0, 1], [4, 16]);
 
   // Subtle body movement
-  const bodyBob = Math.sin(frame * 0.05) * 2;
-  const headTilt = Math.sin(frame * 0.03) * 1;
+  const bodyBob = Math.sin(frame * 0.05) * 4;
+  const headTilt = Math.sin(frame * 0.03) * 2;
 
   // Blinking animation
   const blinkFrame = frame % 180;
   const isBlinking = blinkFrame > 175;
-  const eyeHeight = isBlinking ? 1 : 8;
+  const eyeHeight = isBlinking ? 2 : 16;
 
   // Hand gesture animation
-  const handGesture = Math.sin(frame * 0.08) * 5;
+  const handGesture = Math.sin(frame * 0.08) * 8;
 
   // Text display animation
   const textOpacity = interpolate(frame, [20, 40], [0, 1], { extrapolateRight: "clamp" });
@@ -42,62 +42,76 @@ export const TeacherAvatar: React.FC<TeacherAvatarProps> = ({ narrationText, isV
     <div
       style={{
         position: "absolute",
-        bottom: "20px",
-        right: "20px",
-        width: "420px",
-        height: "320px",
+        bottom: "30px",
+        right: "30px",
+        width: "750px",
+        height: "650px",
         transform: `scale(${entranceSpring})`,
         transformOrigin: "bottom right",
         zIndex: 100,
       }}
     >
-      {/* Speech bubble with narration text */}
+      {/* Speech bubble with narration text - 3x larger */}
       <div
         style={{
           position: "absolute",
           top: "0px",
           left: "0px",
-          right: "80px",
-          backgroundColor: "rgba(255, 255, 255, 0.95)",
-          borderRadius: "16px",
-          padding: "12px 16px",
-          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
+          right: "220px",
+          backgroundColor: "rgba(255, 255, 255, 0.98)",
+          borderRadius: "24px",
+          padding: "24px 30px",
+          boxShadow: "0 8px 40px rgba(0, 0, 0, 0.2)",
           opacity: textOpacity,
-          maxHeight: "120px",
+          maxHeight: "200px",
           overflow: "hidden",
+          border: `3px solid ${colors.accent}`,
         }}
       >
         <p
           style={{
             margin: 0,
-            fontSize: "13px",
-            lineHeight: 1.4,
+            fontSize: "22px",
+            lineHeight: 1.5,
             color: colors.text,
             fontFamily: "'Segoe UI', sans-serif",
+            fontWeight: "500",
           }}
         >
-          {narrationText.slice(0, 200)}
-          {narrationText.length > 200 ? "..." : ""}
+          {narrationText.slice(0, 280)}
+          {narrationText.length > 280 ? "..." : ""}
         </p>
         {/* Speech bubble arrow */}
         <div
           style={{
             position: "absolute",
-            bottom: "-10px",
-            right: "30px",
+            bottom: "-20px",
+            right: "80px",
             width: 0,
             height: 0,
-            borderLeft: "10px solid transparent",
-            borderRight: "10px solid transparent",
-            borderTop: "10px solid rgba(255, 255, 255, 0.95)",
+            borderLeft: "20px solid transparent",
+            borderRight: "20px solid transparent",
+            borderTop: `20px solid ${colors.accent}`,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            bottom: "-14px",
+            right: "84px",
+            width: 0,
+            height: 0,
+            borderLeft: "16px solid transparent",
+            borderRight: "16px solid transparent",
+            borderTop: "16px solid rgba(255, 255, 255, 0.98)",
           }}
         />
       </div>
 
-      {/* Avatar container */}
+      {/* Avatar container - 3x larger (600x600) */}
       <svg
-        width="200"
-        height="200"
+        width="600"
+        height="600"
         viewBox="0 0 200 200"
         style={{
           position: "absolute",
@@ -251,7 +265,7 @@ export const TeacherAvatar: React.FC<TeacherAvatarProps> = ({ narrationText, isV
             fill="#c0392b"
           />
           {/* Teeth hint when mouth is open */}
-          {mouthHeight > 4 && (
+          {mouthHeight > 8 && (
             <rect x="-6" y="17" width="12" height="3" fill="white" rx="1" />
           )}
 
