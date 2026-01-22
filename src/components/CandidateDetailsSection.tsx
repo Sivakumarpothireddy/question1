@@ -1,6 +1,8 @@
 import { AbsoluteFill, interpolate, useCurrentFrame, spring, useVideoConfig } from "remotion";
 import { colors, containerStyle, sectionTitleStyle, cardStyle, explanationBoxStyle } from "../styles";
 import { candidateDetails } from "../data";
+import { TeacherAvatar } from "./TeacherAvatar";
+import { narrationScripts } from "../narration";
 
 export const CandidateDetailsSection: React.FC = () => {
   const frame = useCurrentFrame();
@@ -165,6 +167,9 @@ export const CandidateDetailsSection: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* AI Teacher Avatar */}
+      <TeacherAvatar narrationText={narrationScripts.candidateDetails.text} />
     </AbsoluteFill>
   );
 };

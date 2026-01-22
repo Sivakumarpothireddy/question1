@@ -6,3 +6,4 @@ export { LockingSection } from "./LockingSection";
 export { FilledChoicesSection } from "./FilledChoicesSection";
 export { DeclarationSection } from "./DeclarationSection";
 export { OutroSection } from "./OutroSection";
+export { TeacherAvatar } from "./TeacherAvatar";

@@ -1,6 +1,8 @@
 import { AbsoluteFill, interpolate, useCurrentFrame, spring, useVideoConfig } from "remotion";
 import { colors, containerStyle, sectionTitleStyle, cardStyle, explanationBoxStyle } from "../styles";
 import { jeeAdvancedDetails } from "../data";
+import { TeacherAvatar } from "./TeacherAvatar";
+import { narrationScripts } from "../narration";
 
 export const JEEAdvancedSection: React.FC = () => {
   const frame = useCurrentFrame();
@@ -163,21 +165,8 @@ export const JEEAdvancedSection: React.FC = () => {
         </div>
       </div>
 
-      <div
-        style={{
-          position: "absolute",
-          bottom: "40px",
-          right: "60px",
-          backgroundColor: colors.secondary,
-          color: colors.white,
-          padding: "15px 25px",
-          borderRadius: "10px",
-          fontSize: "18px",
-          opacity: interpolate(frame, [100, 120], [0, 1], { extrapolateRight: "clamp" }),
-        }}
-      >
-        These details determine IIT eligibility and special category benefits
-      </div>
+      {/* AI Teacher Avatar */}
+      <TeacherAvatar narrationText={narrationScripts.jeeAdvanced.text} />
     </AbsoluteFill>
   );
 };

@@ -1,6 +1,8 @@
 import { AbsoluteFill, interpolate, useCurrentFrame, spring, useVideoConfig } from "remotion";
 import { colors, containerStyle, cardStyle } from "../styles";
 import { declaration } from "../data";
+import { TeacherAvatar } from "./TeacherAvatar";
+import { narrationScripts } from "../narration";
 
 export const DeclarationSection: React.FC = () => {
   const frame = useCurrentFrame();
@@ -207,6 +209,9 @@ export const DeclarationSection: React.FC = () => {
           <strong>Legal Binding:</strong> This declaration serves as the candidate's commitment to the admission process.
         </div>
       </div>
+
+      {/* AI Teacher Avatar */}
+      <TeacherAvatar narrationText={narrationScripts.declaration.text} />
     </AbsoluteFill>
   );
 };
