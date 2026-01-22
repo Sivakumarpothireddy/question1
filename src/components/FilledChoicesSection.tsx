@@ -1,8 +1,6 @@
 import { AbsoluteFill, interpolate, useCurrentFrame, spring, useVideoConfig } from "remotion";
 import { colors, containerStyle, cardStyle } from "../styles";
 import { filledChoices } from "../data";
-import { TeacherAvatar } from "./TeacherAvatar";
-import { getFilledChoicesNarration } from "../narration";
 
 // Constants for timing
 const SUBSECTION_DURATION = 600; // 10 seconds at 60fps
@@ -352,8 +350,6 @@ export const FilledChoicesSection: React.FC = () => {
         </div>
       </div>
 
-      {/* AI Teacher Avatar - updates narration based on current subsection */}
-      <TeacherAvatar narrationText={getFilledChoicesNarration(currentSubsection)} />
     </AbsoluteFill>
   );
 };

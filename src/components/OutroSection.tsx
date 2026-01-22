@@ -1,7 +1,5 @@
 import { AbsoluteFill, interpolate, useCurrentFrame, spring, useVideoConfig } from "remotion";
 import { colors } from "../styles";
-import { TeacherAvatar } from "./TeacherAvatar";
-import { narrationScripts } from "../narration";
 
 export const OutroSection: React.FC = () => {
   const frame = useCurrentFrame();
@@ -197,8 +195,6 @@ export const OutroSection: React.FC = () => {
         </p>
       </div>
 
-      {/* AI Teacher Avatar */}
-      <TeacherAvatar narrationText={narrationScripts.outro.text} />
     </AbsoluteFill>
   );
 };

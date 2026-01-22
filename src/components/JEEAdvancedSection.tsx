@@ -1,8 +1,6 @@
 import { AbsoluteFill, interpolate, useCurrentFrame, spring, useVideoConfig } from "remotion";
 import { colors, containerStyle, sectionTitleStyle, cardStyle, explanationBoxStyle } from "../styles";
 import { jeeAdvancedDetails } from "../data";
-import { TeacherAvatar } from "./TeacherAvatar";
-import { narrationScripts } from "../narration";
 
 export const JEEAdvancedSection: React.FC = () => {
   const frame = useCurrentFrame();
@@ -165,8 +163,6 @@ export const JEEAdvancedSection: React.FC = () => {
         </div>
       </div>
 
-      {/* AI Teacher Avatar */}
-      <TeacherAvatar narrationText={narrationScripts.jeeAdvanced.text} />
     </AbsoluteFill>
   );
 };

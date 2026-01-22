@@ -1,7 +1,5 @@
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { colors } from "../styles";
-import { TeacherAvatar } from "./TeacherAvatar";
-import { narrationScripts } from "../narration";
 
 export const IntroSection: React.FC = () => {
   const frame = useCurrentFrame();
@@ -145,8 +143,6 @@ export const IntroSection: React.FC = () => {
         </p>
       </div>
 
-      {/* AI Teacher Avatar */}
-      <TeacherAvatar narrationText={narrationScripts.intro.text} />
     </AbsoluteFill>
   );
 };
