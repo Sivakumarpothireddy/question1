@@ -7,7 +7,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="JoSAAExplainer"
         component={JoSAAExplainer}
-        durationInFrames={2040} // 34 seconds at 60fps
+        durationInFrames={12600} // 210 seconds (3.5 minutes) at 60fps
         fps={60}
         width={1920}
         height={1080}
