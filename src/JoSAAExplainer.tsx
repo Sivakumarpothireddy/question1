@@ -1,4 +1,4 @@
-import { AbsoluteFill, Sequence } from "remotion";
+import { AbsoluteFill, Sequence, Audio, staticFile } from "remotion";
 import { IntroSection } from "./components/IntroSection";
 import { CandidateDetailsSection } from "./components/CandidateDetailsSection";
 import { JEEAdvancedSection } from "./components/JEEAdvancedSection";
@@ -31,6 +31,10 @@ const SECTION_TIMINGS = {
 export const JoSAAExplainer: React.FC = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#ffffff" }}>
+      {/* SINGLE AUDIO FILE - plays throughout entire video */}
+      {/* Place your audio file at: public/audio/narration.mp3 */}
+      <Audio src={staticFile("audio/narration.mp3")} volume={1} />
+
       {/* Intro Section */}
       <Sequence
         from={SECTION_TIMINGS.intro.start}
