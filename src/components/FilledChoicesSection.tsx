@@ -2,45 +2,28 @@ import { AbsoluteFill, interpolate, useCurrentFrame, spring, useVideoConfig } fr
 import { colors } from "../styles";
 import { filledChoices } from "../data";
 
-// Constants for timing
 const SUBSECTION_DURATION = 600; // 10 seconds at 60fps
 const CHOICES_PER_SUBSECTION = 3;
 const TOTAL_SUBSECTIONS = 14;
-const ROW_HEIGHT = 70;
-const HIGHLIGHTED_ROW_HEIGHT = 95;
 
-export const FilledChoicesSection: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+// Large choice card component
+const ChoiceCard: React.FC<{
+  choice: { no: number; institute: string; program: string };
+  index: number;
+  frame: number;
+  fps: number;
+  cardIndex: number; // 0, 1, or 2 within the current 3
+}> = ({ choice, index, frame, fps, cardIndex }) => {
+  const delay = 30 + cardIndex * 15;
 
-  const currentSubsection = Math.floor(frame / SUBSECTION_DURATION);
-  const frameInSubsection = frame % SUBSECTION_DURATION;
+  const cardSpring = spring({
+    frame: frame - delay,
+    fps,
+    config: { damping: 12, stiffness: 100, mass: 0.5 },
+  });
 
-  const highlightStartIndex = currentSubsection * CHOICES_PER_SUBSECTION;
-  const highlightEndIndex = Math.min(highlightStartIndex + CHOICES_PER_SUBSECTION, filledChoices.choices.length);
-
-  const ROWS_ABOVE_HIGHLIGHTED = 3;
-  const VISIBLE_HEIGHT = 650;
-  const ROW_WITH_MARGIN = ROW_HEIGHT + 8;
-
-  const getScrollPosition = (subsection: number) => {
-    const targetIndex = subsection * CHOICES_PER_SUBSECTION;
-    let highlightedPosition = targetIndex * ROW_WITH_MARGIN;
-    const scrollWithRowsAbove = highlightedPosition - (ROWS_ABOVE_HIGHLIGHTED * ROW_WITH_MARGIN);
-    const totalContentHeight = filledChoices.choices.length * ROW_WITH_MARGIN;
-    const maxScroll = Math.max(0, totalContentHeight - VISIBLE_HEIGHT + 50);
-    return Math.max(0, Math.min(scrollWithRowsAbove, maxScroll));
-  };
-
-  const targetScrollY = getScrollPosition(currentSubsection);
-  const prevScrollY = getScrollPosition(Math.max(0, currentSubsection - 1));
-
-  const scrollProgress = interpolate(frameInSubsection, [0, 30], [0, 1], { extrapolateRight: "clamp" });
-  const scrollY = interpolate(scrollProgress, [0, 1], [prevScrollY, targetScrollY]);
-
-  const iitCount = filledChoices.choices.filter(c => c.institute.includes("Indian Institute of Technology")).length;
-  const nitCount = filledChoices.choices.filter(c => c.institute.includes("National Institute of Technology")).length;
-  const otherCount = filledChoices.totalChoices - iitCount - nitCount;
+  const slideX = interpolate(cardSpring, [0, 1], [100, 0]);
+  const opacity = cardSpring;
 
   const getInstituteGradient = (institute: string): string => {
     if (institute.includes("Indian Institute of Technology")) {
@@ -61,24 +44,198 @@ export const FilledChoicesSection: React.FC = () => {
   const getInstituteTag = (institute: string): string => {
     if (institute.includes("Indian Institute of Technology")) return "IIT";
     if (institute.includes("National Institute of Technology")) return "NIT";
-    if (institute.includes("MANIT") || institute.includes("Maulana Azad")) return "NIT";
     return "GFTI";
   };
 
-  const isHighlighted = (index: number): boolean => {
-    return index >= highlightStartIndex && index < highlightEndIndex;
+  const instituteShort = choice.institute
+    .replace("Indian Institute of Technology", "IIT")
+    .replace("National Institute of Technology", "NIT")
+    .replace("Maulana Azad National Institute of Technology", "MANIT")
+    .replace("Shri G. S. Institute of Technology and Science", "SGSITS");
+
+  const programShort = choice.program
+    .replace("(4 Years, Bachelor of Technology)", "B.Tech - 4 Years")
+    .replace("(5 Years, Bachelor and Master of Technology (Dual Degree))", "Dual Degree - 5 Years")
+    .replace("(4 Years, Bachelor of Science)", "B.Sc - 4 Years")
+    .trim();
+
+  const color = getInstituteColor(choice.institute);
+
+  return (
+    <div
+      style={{
+        background: getInstituteGradient(choice.institute),
+        borderRadius: "24px",
+        padding: "28px",
+        transform: `translateX(${slideX}px)`,
+        opacity,
+        boxShadow: `0 20px 50px ${color}50, 0 10px 30px rgba(0,0,0,0.3)`,
+        display: "flex",
+        alignItems: "center",
+        gap: "24px",
+      }}
+    >
+      {/* Rank number */}
+      <div
+        style={{
+          width: "80px",
+          height: "80px",
+          borderRadius: "50%",
+          background: "rgba(255,255,255,0.95)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
+        }}
+      >
+        <span
+          style={{
+            fontSize: "32px",
+            fontWeight: "900",
+            color: color,
+          }}
+        >
+          {choice.no}
+        </span>
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Tag */}
+        <div
+          style={{
+            display: "inline-block",
+            background: "rgba(255,255,255,0.2)",
+            padding: "6px 16px",
+            borderRadius: "20px",
+            marginBottom: "12px",
+          }}
+        >
+          <span style={{ fontSize: "13px", fontWeight: "800", color: colors.white, letterSpacing: "1px" }}>
+            {getInstituteTag(choice.institute)}
+          </span>
+        </div>
+
+        {/* Institute name */}
+        <h3
+          style={{
+            fontSize: "24px",
+            fontWeight: "800",
+            color: colors.white,
+            margin: "0 0 8px 0",
+            textShadow: "0 2px 8px rgba(0,0,0,0.3)",
+            lineHeight: 1.2,
+          }}
+        >
+          {instituteShort}
+        </h3>
+
+        {/* Program */}
+        <p
+          style={{
+            fontSize: "16px",
+            color: "rgba(255,255,255,0.9)",
+            margin: 0,
+            fontWeight: "500",
+          }}
+        >
+          {programShort}
+        </p>
+      </div>
+
+      {/* Choice indicator */}
+      <div
+        style={{
+          background: "rgba(255,255,255,0.15)",
+          borderRadius: "16px",
+          padding: "16px",
+          textAlign: "center",
+          flexShrink: 0,
+        }}
+      >
+        <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.7)", margin: "0 0 4px 0", textTransform: "uppercase" }}>
+          Choice
+        </p>
+        <p style={{ fontSize: "28px", fontWeight: "900", color: colors.white, margin: 0 }}>
+          #{choice.no}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// Mini choice dot for progress indicator
+const MiniChoice: React.FC<{
+  index: number;
+  isActive: boolean;
+  isPast: boolean;
+  institute: string;
+}> = ({ index, isActive, isPast, institute }) => {
+  const getColor = () => {
+    if (institute.includes("Indian Institute of Technology")) return colors.neonBlue;
+    if (institute.includes("National Institute of Technology")) return colors.neonGreen;
+    return colors.neonPink;
   };
+
+  return (
+    <div
+      style={{
+        width: isActive ? "12px" : "8px",
+        height: isActive ? "12px" : "8px",
+        borderRadius: "50%",
+        background: isActive ? getColor() : isPast ? `${getColor()}80` : "rgba(255,255,255,0.2)",
+        boxShadow: isActive ? `0 0 10px ${getColor()}` : "none",
+        transition: "all 0.3s ease",
+      }}
+    />
+  );
+};
+
+export const FilledChoicesSection: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  const currentSubsection = Math.floor(frame / SUBSECTION_DURATION);
+  const frameInSubsection = frame % SUBSECTION_DURATION;
+
+  const highlightStartIndex = currentSubsection * CHOICES_PER_SUBSECTION;
+  const highlightEndIndex = Math.min(highlightStartIndex + CHOICES_PER_SUBSECTION, filledChoices.choices.length);
+
+  // Get current 3 choices
+  const currentChoices = filledChoices.choices.slice(highlightStartIndex, highlightEndIndex);
+
+  const iitCount = filledChoices.choices.filter(c => c.institute.includes("Indian Institute of Technology")).length;
+  const nitCount = filledChoices.choices.filter(c => c.institute.includes("National Institute of Technology")).length;
+  const otherCount = filledChoices.totalChoices - iitCount - nitCount;
+
+  const headerOpacity = interpolate(frame, [0, 30], [0, 1], { extrapolateRight: "clamp" });
 
   return (
     <AbsoluteFill
       style={{
         background: "linear-gradient(135deg, #0a0a0f 0%, #0f1a1a 50%, #1a0f1a 100%)",
-        padding: "50px 60px",
+        padding: "40px 50px",
         overflow: "hidden",
       }}
     >
+      {/* Background glow */}
+      <div
+        style={{
+          position: "absolute",
+          top: "30%",
+          left: "30%",
+          width: "600px",
+          height: "600px",
+          borderRadius: "50%",
+          background: `radial-gradient(circle, ${colors.neonPurple}15 0%, transparent 60%)`,
+          filter: "blur(60px)",
+          pointerEvents: "none",
+        }}
+      />
+
       {/* Header */}
-      <div style={{ marginBottom: "20px", position: "relative", zIndex: 10 }}>
+      <div style={{ marginBottom: "25px", position: "relative", zIndex: 10, opacity: headerOpacity }}>
         <div style={{ display: "flex", alignItems: "center", gap: "20px", justifyContent: "center" }}>
           <div
             style={{
@@ -90,231 +247,100 @@ export const FilledChoicesSection: React.FC = () => {
           >
             <span style={{ fontSize: "18px", fontWeight: "700", color: colors.white }}>05</span>
           </div>
-          <h1 style={{ fontSize: "38px", fontWeight: "800", color: colors.white, margin: 0 }}>
-            Filled Choices ({filledChoices.totalChoices} Total)
+          <h1 style={{ fontSize: "36px", fontWeight: "800", color: colors.white, margin: 0 }}>
+            Filled Choices
           </h1>
+          <div
+            style={{
+              background: "rgba(255,255,255,0.1)",
+              borderRadius: "20px",
+              padding: "8px 20px",
+            }}
+          >
+            <span style={{ fontSize: "16px", fontWeight: "700", color: colors.white }}>
+              {highlightStartIndex + 1}-{highlightEndIndex} of {filledChoices.totalChoices}
+            </span>
+          </div>
         </div>
-        <p style={{ fontSize: "16px", color: colors.textSecondary, margin: "10px 0 0 0", textAlign: "center" }}>
-          Viewing <span style={{ color: colors.neonPink, fontWeight: "700" }}>{highlightStartIndex + 1} - {highlightEndIndex}</span> of 41
-        </p>
       </div>
 
       {/* Main content */}
-      <div style={{ display: "flex", gap: "20px", flex: 1, minHeight: 0, position: "relative", zIndex: 10 }}>
-        {/* Scrolling list */}
-        <div
-          style={{
-            flex: "3",
-            position: "relative",
-            overflow: "hidden",
-            borderRadius: "20px",
-            border: "1px solid rgba(255,255,255,0.1)",
-            background: "rgba(255,255,255,0.02)",
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              transform: `translateY(-${scrollY}px)`,
-              padding: "12px",
-            }}
-          >
-            {filledChoices.choices.map((choice, index) => {
-              const highlighted = isHighlighted(index);
-
-              const zoomScale = highlighted
-                ? spring({
-                    frame: frameInSubsection - 10,
-                    fps,
-                    config: { damping: 12, stiffness: 180, mass: 0.4 },
-                  })
-                : 0;
-
-              const finalScale = highlighted ? 1 + (Math.min(zoomScale, 1) * 0.06) : 1;
-
-              const instituteShort = choice.institute
-                .replace("Indian Institute of Technology", "IIT")
-                .replace("National Institute of Technology", "NIT")
-                .replace("Maulana Azad National Institute of Technology", "MANIT")
-                .replace("Shri G. S. Institute of Technology and Science", "SGSITS");
-
-              const programShort = choice.program
-                .replace("(4 Years, Bachelor of Technology)", "(B.Tech)")
-                .replace("(5 Years, Bachelor and Master of Technology (Dual Degree))", "(Dual)")
-                .replace("(4 Years, Bachelor of Science)", "(B.Sc)")
-                .trim();
-
-              return (
-                <div
-                  key={choice.no}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    padding: highlighted ? "16px 20px" : "10px 15px",
-                    marginBottom: "8px",
-                    borderRadius: highlighted ? "16px" : "12px",
-                    background: highlighted
-                      ? getInstituteGradient(choice.institute)
-                      : "rgba(255,255,255,0.03)",
-                    border: highlighted ? "none" : "1px solid rgba(255,255,255,0.06)",
-                    transform: `scale(${finalScale})`,
-                    transformOrigin: "left center",
-                    boxShadow: highlighted
-                      ? `0 15px 40px ${getInstituteColor(choice.institute)}40, 0 5px 20px rgba(0,0,0,0.3)`
-                      : "none",
-                    zIndex: highlighted ? 100 : 1,
-                    position: "relative",
-                    minHeight: highlighted ? `${HIGHLIGHTED_ROW_HEIGHT - 32}px` : `${ROW_HEIGHT - 20}px`,
-                  }}
-                >
-                  {/* Number badge */}
-                  <div
-                    style={{
-                      background: highlighted ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.1)",
-                      color: highlighted ? getInstituteColor(choice.institute) : colors.textSecondary,
-                      width: highlighted ? "55px" : "40px",
-                      height: highlighted ? "55px" : "40px",
-                      borderRadius: "50%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: "900",
-                      fontSize: highlighted ? "22px" : "14px",
-                      marginRight: highlighted ? "18px" : "12px",
-                      flexShrink: 0,
-                      boxShadow: highlighted ? "0 4px 15px rgba(0,0,0,0.2)" : "none",
-                    }}
-                  >
-                    {choice.no}
-                  </div>
-
-                  {/* Tag */}
-                  <div
-                    style={{
-                      background: highlighted ? "rgba(255,255,255,0.9)" : `${getInstituteColor(choice.institute)}30`,
-                      color: highlighted ? getInstituteColor(choice.institute) : getInstituteColor(choice.institute),
-                      padding: highlighted ? "6px 14px" : "4px 10px",
-                      borderRadius: "8px",
-                      fontSize: highlighted ? "12px" : "10px",
-                      fontWeight: "800",
-                      marginRight: highlighted ? "18px" : "12px",
-                      flexShrink: 0,
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    {getInstituteTag(choice.institute)}
-                  </div>
-
-                  {/* Content */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontSize: highlighted ? "18px" : "13px",
-                        fontWeight: highlighted ? "700" : "500",
-                        color: highlighted ? colors.white : colors.textPrimary,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        textShadow: highlighted ? "0 1px 3px rgba(0,0,0,0.3)" : "none",
-                      }}
-                    >
-                      {instituteShort}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: highlighted ? "14px" : "11px",
-                        color: highlighted ? "rgba(255,255,255,0.85)" : colors.textMuted,
-                        fontWeight: highlighted ? "500" : "normal",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        marginTop: "3px",
-                      }}
-                    >
-                      {programShort}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Overlays */}
-          {scrollY > 0 && (
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                height: "60px",
-                background: "linear-gradient(to bottom, rgba(10,10,15,1) 0%, transparent 100%)",
-                pointerEvents: "none",
-                zIndex: 50,
-              }}
+      <div style={{ display: "flex", gap: "30px", flex: 1, position: "relative", zIndex: 10 }}>
+        {/* Left: Current 3 choices */}
+        <div style={{ flex: 2, display: "flex", flexDirection: "column", gap: "16px", justifyContent: "center" }}>
+          {currentChoices.map((choice, idx) => (
+            <ChoiceCard
+              key={choice.no}
+              choice={choice}
+              index={highlightStartIndex + idx}
+              frame={frameInSubsection}
+              fps={fps}
+              cardIndex={idx}
             />
-          )}
-          <div
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: "60px",
-              background: "linear-gradient(to top, rgba(10,10,15,1) 0%, transparent 100%)",
-              pointerEvents: "none",
-              zIndex: 50,
-            }}
-          />
+          ))}
         </div>
 
-        {/* Side panel */}
-        <div style={{ flex: "1", display: "flex", flexDirection: "column", gap: "12px" }}>
-          {/* Now viewing */}
-          <div
-            style={{
-              background: `linear-gradient(135deg, ${colors.neonPink}, ${colors.neonOrange})`,
-              padding: "25px 20px",
-              borderRadius: "20px",
-              textAlign: "center",
-              boxShadow: `0 10px 30px ${colors.neonPink}40`,
-            }}
-          >
-            <p style={{ fontSize: "11px", margin: "0 0 8px 0", opacity: 0.9, textTransform: "uppercase", letterSpacing: "2px" }}>
-              Now Viewing
-            </p>
-            <h3 style={{ fontSize: "42px", fontWeight: "900", margin: 0, textShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
-              {highlightStartIndex + 1}-{highlightEndIndex}
-            </h3>
-          </div>
-
-          {/* Progress */}
+        {/* Right: Stats and progress */}
+        <div style={{ width: "320px", display: "flex", flexDirection: "column", gap: "16px" }}>
+          {/* Progress circular */}
           <div
             style={{
               background: "rgba(255,255,255,0.03)",
               border: "1px solid rgba(255,255,255,0.1)",
-              padding: "20px",
-              borderRadius: "20px",
+              borderRadius: "24px",
+              padding: "25px",
+              textAlign: "center",
             }}
           >
-            <p style={{ fontSize: "11px", margin: "0 0 12px 0", color: colors.textMuted, textTransform: "uppercase", letterSpacing: "1px" }}>
-              Progress
-            </p>
-            <div style={{ height: "8px", background: "rgba(255,255,255,0.1)", borderRadius: "4px", overflow: "hidden", marginBottom: "12px" }}>
+            <div
+              style={{
+                width: "120px",
+                height: "120px",
+                borderRadius: "50%",
+                background: `conic-gradient(${colors.neonPink} ${(highlightEndIndex / 41) * 360}deg, rgba(255,255,255,0.1) 0deg)`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 15px",
+              }}
+            >
               <div
                 style={{
-                  width: `${(highlightEndIndex / 41) * 100}%`,
-                  height: "100%",
-                  background: `linear-gradient(90deg, ${colors.neonGreen}, ${colors.neonBlue})`,
-                  borderRadius: "4px",
+                  width: "100px",
+                  height: "100px",
+                  borderRadius: "50%",
+                  background: "#0a0a0f",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexDirection: "column",
                 }}
-              />
+              >
+                <span style={{ fontSize: "28px", fontWeight: "900", color: colors.white }}>
+                  {Math.round((highlightEndIndex / 41) * 100)}%
+                </span>
+              </div>
             </div>
-            <p style={{ fontSize: "14px", margin: 0, color: colors.white, fontWeight: "600" }}>
-              {highlightEndIndex} of 41 viewed
+            <p style={{ fontSize: "14px", color: colors.textSecondary, margin: 0 }}>
+              {highlightEndIndex} of 41 choices viewed
+            </p>
+          </div>
+
+          {/* Subsection indicator */}
+          <div
+            style={{
+              background: `linear-gradient(135deg, ${colors.neonPink}20, ${colors.neonOrange}20)`,
+              border: `1px solid ${colors.neonPink}40`,
+              borderRadius: "20px",
+              padding: "20px",
+              textAlign: "center",
+            }}
+          >
+            <p style={{ fontSize: "11px", color: colors.textMuted, margin: "0 0 8px 0", textTransform: "uppercase", letterSpacing: "1px" }}>
+              Section
+            </p>
+            <p style={{ fontSize: "36px", fontWeight: "900", color: colors.neonPink, margin: 0 }}>
+              {currentSubsection + 1}<span style={{ fontSize: "20px", color: colors.textSecondary }}>/{TOTAL_SUBSECTIONS}</span>
             </p>
           </div>
 
@@ -323,54 +349,58 @@ export const FilledChoicesSection: React.FC = () => {
             style={{
               background: "rgba(255,255,255,0.03)",
               border: "1px solid rgba(255,255,255,0.1)",
-              padding: "18px",
               borderRadius: "20px",
+              padding: "20px",
             }}
           >
-            <p style={{ fontSize: "11px", margin: "0 0 15px 0", color: colors.textMuted, textTransform: "uppercase", letterSpacing: "1px" }}>
+            <p style={{ fontSize: "11px", color: colors.textMuted, margin: "0 0 15px 0", textTransform: "uppercase", letterSpacing: "1px" }}>
               Distribution
             </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <div style={{ width: "12px", height: "12px", background: `linear-gradient(135deg, ${colors.neonBlue}, ${colors.neonPurple})`, borderRadius: "3px" }} />
-                  <span style={{ fontSize: "13px", color: colors.textSecondary }}>IITs</span>
+            <div style={{ display: "flex", justifyContent: "space-around" }}>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ width: "40px", height: "40px", borderRadius: "12px", background: `linear-gradient(135deg, ${colors.neonBlue}, ${colors.neonPurple})`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>
+                  <span style={{ fontSize: "16px", fontWeight: "800", color: colors.white }}>{iitCount}</span>
                 </div>
-                <span style={{ fontSize: "18px", fontWeight: "800", color: colors.neonBlue }}>{iitCount}</span>
+                <span style={{ fontSize: "11px", color: colors.textSecondary }}>IITs</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <div style={{ width: "12px", height: "12px", background: `linear-gradient(135deg, ${colors.neonGreen}, ${colors.neonBlue})`, borderRadius: "3px" }} />
-                  <span style={{ fontSize: "13px", color: colors.textSecondary }}>NITs</span>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ width: "40px", height: "40px", borderRadius: "12px", background: `linear-gradient(135deg, ${colors.neonGreen}, ${colors.neonBlue})`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>
+                  <span style={{ fontSize: "16px", fontWeight: "800", color: colors.white }}>{nitCount}</span>
                 </div>
-                <span style={{ fontSize: "18px", fontWeight: "800", color: colors.neonGreen }}>{nitCount}</span>
+                <span style={{ fontSize: "11px", color: colors.textSecondary }}>NITs</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <div style={{ width: "12px", height: "12px", background: `linear-gradient(135deg, ${colors.neonPink}, ${colors.neonOrange})`, borderRadius: "3px" }} />
-                  <span style={{ fontSize: "13px", color: colors.textSecondary }}>Others</span>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ width: "40px", height: "40px", borderRadius: "12px", background: `linear-gradient(135deg, ${colors.neonPink}, ${colors.neonOrange})`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>
+                  <span style={{ fontSize: "16px", fontWeight: "800", color: colors.white }}>{otherCount}</span>
                 </div>
-                <span style={{ fontSize: "18px", fontWeight: "800", color: colors.neonPink }}>{otherCount}</span>
+                <span style={{ fontSize: "11px", color: colors.textSecondary }}>Others</span>
               </div>
             </div>
           </div>
 
-          {/* Subsection */}
+          {/* Mini progress dots */}
           <div
             style={{
-              background: `linear-gradient(135deg, ${colors.neonGreen}30, ${colors.neonBlue}30)`,
-              border: `1px solid ${colors.neonGreen}50`,
-              padding: "18px",
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.1)",
               borderRadius: "20px",
-              textAlign: "center",
+              padding: "15px",
             }}
           >
-            <h3 style={{ fontSize: "28px", fontWeight: "900", margin: "0 0 3px 0", color: colors.neonGreen }}>
-              {currentSubsection + 1}/{TOTAL_SUBSECTIONS}
-            </h3>
-            <p style={{ fontSize: "11px", margin: 0, color: colors.textSecondary, textTransform: "uppercase", letterSpacing: "1px" }}>
-              Subsection
+            <p style={{ fontSize: "10px", color: colors.textMuted, margin: "0 0 10px 0", textTransform: "uppercase", letterSpacing: "1px", textAlign: "center" }}>
+              All Choices
             </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", justifyContent: "center" }}>
+              {filledChoices.choices.map((choice, idx) => (
+                <MiniChoice
+                  key={idx}
+                  index={idx}
+                  isActive={idx >= highlightStartIndex && idx < highlightEndIndex}
+                  isPast={idx < highlightStartIndex}
+                  institute={choice.institute}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
