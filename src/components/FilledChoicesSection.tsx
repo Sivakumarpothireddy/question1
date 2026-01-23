@@ -21,16 +21,21 @@ export const FilledChoicesSection: React.FC = () => {
   const highlightStartIndex = currentSubsection * CHOICES_PER_SUBSECTION;
   const highlightEndIndex = Math.min(highlightStartIndex + CHOICES_PER_SUBSECTION, filledChoices.choices.length);
 
-  // Calculate scroll position to center highlighted choices
-  // Account for variable row heights
+  // Calculate scroll position to CENTER highlighted choices in the visible area
+  // Visible area is approximately 650px, so we want highlighted choices centered
+  const VISIBLE_HEIGHT = 650;
   const getScrollPosition = (subsection: number) => {
     const targetIndex = subsection * CHOICES_PER_SUBSECTION;
-    // Calculate position considering all rows before target
+    // Calculate position of the first highlighted choice
     let position = 0;
     for (let i = 0; i < targetIndex; i++) {
       position += ROW_HEIGHT + 8; // row height + margin
     }
-    return Math.max(0, position - 80); // 80px offset from top
+    // Calculate height of the 3 highlighted rows
+    const highlightedHeight = CHOICES_PER_SUBSECTION * (ROW_HEIGHT + 8);
+    // Center the highlighted choices: scroll to position minus half visible area plus half highlighted height
+    const centeredPosition = position - (VISIBLE_HEIGHT / 2) + (highlightedHeight / 2);
+    return Math.max(0, centeredPosition);
   };
 
   const targetScrollY = getScrollPosition(currentSubsection);
@@ -258,28 +263,6 @@ export const FilledChoicesSection: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Rank badge for highlighted */}
-                  {highlighted && (
-                    <div
-                      style={{
-                        background: "rgba(255,255,255,0.95)",
-                        color: getInstituteColor(choice.institute),
-                        padding: "10px 20px",
-                        borderRadius: "25px",
-                        fontSize: "13px",
-                        fontWeight: "800",
-                        marginLeft: "15px",
-                        flexShrink: 0,
-                        boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                      }}
-                    >
-                      <span style={{ fontSize: "16px" }}>★</span>
-                      CHOICE #{choice.no}
-                    </div>
-                  )}
                 </div>
               );
             })}
