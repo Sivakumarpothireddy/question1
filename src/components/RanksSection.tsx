@@ -1,250 +1,359 @@
 import { AbsoluteFill, interpolate, useCurrentFrame, spring, useVideoConfig } from "remotion";
-import { colors, containerStyle, sectionTitleStyle, cardStyle, explanationBoxStyle } from "../styles";
-import { ranksData } from "../data";
+import { colors } from "../styles";
+
+// Animated counter component
+const AnimatedCounter: React.FC<{
+  value: number;
+  frame: number;
+  delay: number;
+  label: string;
+  sublabel: string;
+  color: string;
+  size?: "large" | "medium";
+}> = ({ value, frame, delay, label, sublabel, color, size = "medium" }) => {
+  const progress = interpolate(frame, [delay, delay + 60], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  const displayValue = Math.floor(value * progress);
+  const scale = interpolate(frame, [delay, delay + 20], [0.8, 1], { extrapolateRight: "clamp" });
+  const opacity = interpolate(frame, [delay, delay + 20], [0, 1], { extrapolateRight: "clamp" });
+
+  return (
+    <div
+      style={{
+        background: "rgba(255, 255, 255, 0.03)",
+        border: `2px solid ${color}40`,
+        borderRadius: "24px",
+        padding: size === "large" ? "40px" : "24px",
+        textAlign: "center",
+        transform: `scale(${scale})`,
+        opacity,
+        boxShadow: `0 0 40px ${color}20, inset 0 0 60px ${color}05`,
+      }}
+    >
+      <p
+        style={{
+          fontSize: "12px",
+          color: colors.textMuted,
+          margin: "0 0 8px 0",
+          textTransform: "uppercase",
+          letterSpacing: "2px",
+        }}
+      >
+        {label}
+      </p>
+      <p
+        style={{
+          fontSize: size === "large" ? "72px" : "48px",
+          fontWeight: "900",
+          color: color,
+          margin: "0",
+          fontFamily: "monospace",
+          textShadow: `0 0 30px ${color}60`,
+          lineHeight: 1,
+        }}
+      >
+        {displayValue.toLocaleString()}
+      </p>
+      <p
+        style={{
+          fontSize: "14px",
+          color: colors.textSecondary,
+          margin: "10px 0 0 0",
+        }}
+      >
+        {sublabel}
+      </p>
+    </div>
+  );
+};
+
+// Comparison bar
+const ComparisonBar: React.FC<{
+  mainRank: number;
+  advancedRank: number;
+  frame: number;
+  delay: number;
+  label: string;
+}> = ({ mainRank, advancedRank, frame, delay, label }) => {
+  const maxRank = Math.max(mainRank, advancedRank);
+  const mainWidth = interpolate(frame, [delay, delay + 40], [0, (mainRank / maxRank) * 100], {
+    extrapolateRight: "clamp",
+  });
+  const advWidth = interpolate(frame, [delay + 20, delay + 60], [0, (advancedRank / maxRank) * 100], {
+    extrapolateRight: "clamp",
+  });
+  const opacity = interpolate(frame, [delay, delay + 20], [0, 1], { extrapolateRight: "clamp" });
+
+  return (
+    <div style={{ marginBottom: "20px", opacity }}>
+      <p style={{ fontSize: "14px", color: colors.textSecondary, margin: "0 0 12px 0" }}>{label}</p>
+
+      <div style={{ marginBottom: "8px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+          <span style={{ fontSize: "12px", color: colors.neonBlue }}>JEE Main</span>
+          <span style={{ fontSize: "14px", color: colors.neonBlue, fontWeight: "700" }}>{mainRank.toLocaleString()}</span>
+        </div>
+        <div style={{ height: "8px", background: "rgba(255,255,255,0.1)", borderRadius: "4px", overflow: "hidden" }}>
+          <div
+            style={{
+              width: `${mainWidth}%`,
+              height: "100%",
+              background: `linear-gradient(90deg, ${colors.neonBlue}, ${colors.neonPurple})`,
+              borderRadius: "4px",
+            }}
+          />
+        </div>
+      </div>
+
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+          <span style={{ fontSize: "12px", color: colors.neonGreen }}>JEE Advanced</span>
+          <span style={{ fontSize: "14px", color: colors.neonGreen, fontWeight: "700" }}>{advancedRank.toLocaleString()}</span>
+        </div>
+        <div style={{ height: "8px", background: "rgba(255,255,255,0.1)", borderRadius: "4px", overflow: "hidden" }}>
+          <div
+            style={{
+              width: `${advWidth}%`,
+              height: "100%",
+              background: `linear-gradient(90deg, ${colors.neonGreen}, ${colors.neonBlue})`,
+              borderRadius: "4px",
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const RanksSection: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const titleOpacity = interpolate(frame, [0, 20], [0, 1], {
-    extrapolateRight: "clamp",
-  });
-
-  const cardOpacity = interpolate(frame, [15, 35], [0, 1], {
-    extrapolateRight: "clamp",
-  });
-
-  const highlightPhase = Math.floor(
-    interpolate(frame, [50, 200], [0, 4], {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-    })
-  );
-
-  const explanationOpacity = interpolate(frame, [60, 80], [0, 1], {
-    extrapolateRight: "clamp",
-  });
-
-  const getExplanation = (phase: number): string => {
-    const explanations: Record<number, string> = {
-      0: "JEE Main Rank (15540) is used for NITs, IIITs, and GFTIs admission. JEE Advanced Rank (8541) is used for IIT admissions.",
-      1: "CRL (Common Rank List) shows the overall ranking among all candidates. This is the primary rank used for general category seat allocation.",
-      2: "GEN-EWS Rank (2040 Main, 1004 Advanced) is the rank within the Economically Weaker Section category, providing additional reservation benefits.",
-      3: "The B.Arch and B.Planning columns show '--' because the candidate didn't appear for these papers or isn't eligible for architecture programs.",
-    };
-    return explanations[phase] || explanations[0];
-  };
+  const headerOpacity = interpolate(frame, [0, 30], [0, 1], { extrapolateRight: "clamp" });
+  const headerY = interpolate(frame, [0, 30], [-40, 0], { extrapolateRight: "clamp" });
 
   return (
-    <AbsoluteFill style={containerStyle}>
+    <AbsoluteFill
+      style={{
+        background: "linear-gradient(135deg, #0a0f0a 0%, #0a1a1a 50%, #1a1a0a 100%)",
+        padding: "50px 60px",
+        overflow: "hidden",
+      }}
+    >
+      {/* Animated background circles */}
       <div
         style={{
-          opacity: titleOpacity,
-          marginBottom: "30px",
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: "800px",
+          height: "800px",
+          borderRadius: "50%",
+          border: `1px solid ${colors.neonGreen}10`,
+          opacity: interpolate(frame, [0, 60], [0, 1], { extrapolateRight: "clamp" }),
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: "600px",
+          height: "600px",
+          borderRadius: "50%",
+          border: `1px solid ${colors.neonBlue}15`,
+          opacity: interpolate(frame, [20, 80], [0, 1], { extrapolateRight: "clamp" }),
+        }}
+      />
+
+      {/* Header */}
+      <div
+        style={{
+          opacity: headerOpacity,
+          transform: `translateY(${headerY}px)`,
+          marginBottom: "40px",
+          position: "relative",
+          zIndex: 10,
         }}
       >
-        <h1
-          style={{
-            fontSize: "48px",
-            fontWeight: "bold",
-            color: colors.primary,
-            margin: "0 0 5px 0",
-            textAlign: "center",
-          }}
-        >
-          Section 3: Rank(s)
-        </h1>
-        <p
-          style={{
-            fontSize: "22px",
-            color: colors.lightText,
-            margin: "0",
-            textAlign: "center",
-          }}
-        >
-          JEE Main and JEE Advanced rankings across different categories
+        <div style={{ display: "flex", alignItems: "center", gap: "20px", justifyContent: "center" }}>
+          <div
+            style={{
+              background: `linear-gradient(135deg, ${colors.neonGreen}, ${colors.neonBlue})`,
+              borderRadius: "12px",
+              padding: "10px 20px",
+              boxShadow: `0 0 30px ${colors.neonGreen}50`,
+            }}
+          >
+            <span style={{ fontSize: "18px", fontWeight: "700", color: colors.white }}>03</span>
+          </div>
+          <h1 style={{ fontSize: "42px", fontWeight: "800", color: colors.white, margin: 0 }}>
+            Rankings Overview
+          </h1>
+        </div>
+        <p style={{ fontSize: "18px", color: colors.textSecondary, margin: "12px 0 0 0", textAlign: "center" }}>
+          JEE Main and JEE Advanced performance metrics
         </p>
       </div>
 
-      <div
-        style={{
-          ...cardStyle,
-          opacity: cardOpacity,
-          maxWidth: "1400px",
-          margin: "0 auto",
-          width: "100%",
-        }}
-      >
-        <h2 style={sectionTitleStyle}>{ranksData.title}</h2>
-
-        <div style={{ padding: "25px" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "20px" }}>
-            <thead>
-              <tr style={{ backgroundColor: colors.secondary }}>
-                <th style={{ padding: "15px 20px", color: colors.white, textAlign: "left", fontWeight: "600" }}>
-                  Rank List
-                </th>
-                <th style={{ padding: "15px 20px", color: colors.white, textAlign: "center", fontWeight: "600" }}>
-                  JEE(Main) B.E./B.Tech
-                </th>
-                <th style={{ padding: "15px 20px", color: colors.white, textAlign: "center", fontWeight: "600" }}>
-                  JEE(Main) B.Arch
-                </th>
-                <th style={{ padding: "15px 20px", color: colors.white, textAlign: "center", fontWeight: "600" }}>
-                  JEE(Main) B.Planning
-                </th>
-                <th style={{ padding: "15px 20px", color: colors.white, textAlign: "center", fontWeight: "600" }}>
-                  JEE(Advanced)
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {ranksData.fields.map((field, index) => {
-                const isHighlighted = index === highlightPhase || (index === 0 && highlightPhase === 0);
-                const rowSpring = spring({
-                  frame: frame - 40 - index * 20,
-                  fps,
-                  config: { damping: 100, stiffness: 200, mass: 0.5 },
-                });
-
-                return (
-                  <tr
-                    key={index}
-                    style={{
-                      backgroundColor: isHighlighted ? colors.highlight : index % 2 === 0 ? colors.tableRow : colors.white,
-                      boxShadow: isHighlighted ? `inset 4px 0 0 ${colors.accent}` : "none",
-                      opacity: rowSpring,
-                    }}
-                  >
-                    <td
-                      style={{
-                        padding: "18px 20px",
-                        fontWeight: "600",
-                        color: colors.text,
-                        borderBottom: `1px solid ${colors.border}`,
-                      }}
-                    >
-                      {field.label}
-                    </td>
-                    <td
-                      style={{
-                        padding: "18px 20px",
-                        textAlign: "center",
-                        color: isHighlighted ? colors.accent : colors.text,
-                        fontWeight: isHighlighted ? "bold" : "normal",
-                        fontSize: isHighlighted ? "24px" : "20px",
-                        borderBottom: `1px solid ${colors.border}`,
-                      }}
-                    >
-                      {field.value}
-                    </td>
-                    <td
-                      style={{
-                        padding: "18px 20px",
-                        textAlign: "center",
-                        color: colors.lightText,
-                        borderBottom: `1px solid ${colors.border}`,
-                      }}
-                    >
-                      --
-                    </td>
-                    <td
-                      style={{
-                        padding: "18px 20px",
-                        textAlign: "center",
-                        color: colors.lightText,
-                        borderBottom: `1px solid ${colors.border}`,
-                      }}
-                    >
-                      --
-                    </td>
-                    <td
-                      style={{
-                        padding: "18px 20px",
-                        textAlign: "center",
-                        color: isHighlighted ? colors.success : colors.text,
-                        fontWeight: isHighlighted ? "bold" : "normal",
-                        fontSize: isHighlighted ? "24px" : "20px",
-                        borderBottom: `1px solid ${colors.border}`,
-                      }}
-                    >
-                      {field.advanced}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      {/* Main content */}
+      <div style={{ display: "flex", gap: "30px", flex: 1, position: "relative", zIndex: 10 }}>
+        {/* Left: Big counters */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "20px" }}>
+          <AnimatedCounter
+            value={8541}
+            frame={frame}
+            delay={40}
+            label="JEE Advanced Rank"
+            sublabel="All India Rank (CRL)"
+            color={colors.neonGreen}
+            size="large"
+          />
+          <AnimatedCounter
+            value={1004}
+            frame={frame}
+            delay={80}
+            label="EWS Category Rank"
+            sublabel="JEE Advanced"
+            color={colors.neonBlue}
+            size="medium"
+          />
         </div>
-      </div>
 
-      <div
-        style={{
-          ...explanationBoxStyle,
-          opacity: explanationOpacity,
-          maxWidth: "1400px",
-          margin: "25px auto 0",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "15px" }}>
+        {/* Center: Visual comparison */}
+        <div
+          style={{
+            flex: 1.5,
+            background: "rgba(255, 255, 255, 0.02)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "24px",
+            padding: "30px",
+          }}
+        >
+          <h3 style={{ fontSize: "18px", color: colors.white, margin: "0 0 30px 0", fontWeight: "600" }}>
+            Rank Comparison
+          </h3>
+
+          <ComparisonBar
+            mainRank={15540}
+            advancedRank={8541}
+            frame={frame}
+            delay={60}
+            label="Common Rank List (CRL)"
+          />
+
+          <ComparisonBar
+            mainRank={2040}
+            advancedRank={1004}
+            frame={frame}
+            delay={100}
+            label="GEN-EWS Category Rank"
+          />
+
+          {/* Improvement indicator */}
           <div
             style={{
-              backgroundColor: colors.accent,
-              color: colors.white,
-              padding: "10px 20px",
-              borderRadius: "20px",
-              fontSize: "18px",
-              fontWeight: "bold",
-              whiteSpace: "nowrap",
+              marginTop: "30px",
+              background: `linear-gradient(135deg, ${colors.neonGreen}20, ${colors.neonBlue}20)`,
+              borderRadius: "16px",
+              padding: "20px",
+              opacity: interpolate(frame, [160, 190], [0, 1], { extrapolateRight: "clamp" }),
             }}
           >
-            Key Insight
+            <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+              <div
+                style={{
+                  width: "50px",
+                  height: "50px",
+                  borderRadius: "50%",
+                  background: `linear-gradient(135deg, ${colors.neonGreen}, ${colors.neonBlue})`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "24px",
+                }}
+              >
+                📈
+              </div>
+              <div>
+                <p style={{ fontSize: "14px", color: colors.textSecondary, margin: "0 0 4px 0" }}>Performance Insight</p>
+                <p style={{ fontSize: "18px", color: colors.white, margin: 0, fontWeight: "600" }}>
+                  <span style={{ color: colors.neonGreen }}>45% better</span> rank in JEE Advanced vs JEE Main
+                </p>
+              </div>
+            </div>
           </div>
-          <p style={{ margin: 0, fontSize: "22px", lineHeight: 1.6 }}>
-            {getExplanation(highlightPhase)}
-          </p>
+        </div>
+
+        {/* Right: JEE Main counters */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "20px" }}>
+          <AnimatedCounter
+            value={15540}
+            frame={frame}
+            delay={50}
+            label="JEE Main Rank"
+            sublabel="B.E./B.Tech"
+            color={colors.neonBlue}
+            size="large"
+          />
+          <AnimatedCounter
+            value={2040}
+            frame={frame}
+            delay={90}
+            label="EWS Category Rank"
+            sublabel="JEE Main"
+            color={colors.neonPurple}
+            size="medium"
+          />
         </div>
       </div>
 
+      {/* Bottom badges */}
       <div
         style={{
           display: "flex",
           justifyContent: "center",
-          gap: "30px",
-          marginTop: "20px",
-          opacity: interpolate(frame, [120, 150], [0, 1], { extrapolateRight: "clamp" }),
+          gap: "20px",
+          marginTop: "30px",
+          opacity: interpolate(frame, [200, 230], [0, 1], { extrapolateRight: "clamp" }),
+          position: "relative",
+          zIndex: 10,
         }}
       >
         <div
           style={{
-            backgroundColor: colors.primary,
-            color: colors.white,
+            background: `linear-gradient(135deg, ${colors.neonGreen}30, ${colors.neonGreen}10)`,
+            border: `1px solid ${colors.neonGreen}50`,
+            borderRadius: "12px",
             padding: "15px 25px",
-            borderRadius: "10px",
-            fontSize: "18px",
-            textAlign: "center",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
           }}
         >
-          <strong>Better JEE Advanced Rank</strong>
-          <br />
-          8541 vs 15540 (Main)
+          <span style={{ fontSize: "24px" }}>🎯</span>
+          <span style={{ color: colors.neonGreen, fontWeight: "600" }}>Eligible for Top IITs</span>
         </div>
         <div
           style={{
-            backgroundColor: colors.success,
-            color: colors.white,
+            background: `linear-gradient(135deg, ${colors.neonBlue}30, ${colors.neonBlue}10)`,
+            border: `1px solid ${colors.neonBlue}50`,
+            borderRadius: "12px",
             padding: "15px 25px",
-            borderRadius: "10px",
-            fontSize: "18px",
-            textAlign: "center",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
           }}
         >
-          <strong>EWS Advantage</strong>
-          <br />
-          Rank 1004 in EWS category
+          <span style={{ fontSize: "24px" }}>⭐</span>
+          <span style={{ color: colors.neonBlue, fontWeight: "600" }}>EWS Reservation Advantage</span>
         </div>
       </div>
-
     </AbsoluteFill>
   );
 };

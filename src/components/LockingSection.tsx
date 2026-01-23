@@ -1,224 +1,257 @@
 import { AbsoluteFill, interpolate, useCurrentFrame, spring, useVideoConfig } from "remotion";
-import { colors, containerStyle, sectionTitleStyle, cardStyle, explanationBoxStyle } from "../styles";
+import { colors } from "../styles";
 import { lockingDetails } from "../data";
 
 export const LockingSection: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const titleOpacity = interpolate(frame, [0, 20], [0, 1], {
-    extrapolateRight: "clamp",
+  const headerOpacity = interpolate(frame, [0, 30], [0, 1], { extrapolateRight: "clamp" });
+  const headerY = interpolate(frame, [0, 30], [-40, 0], { extrapolateRight: "clamp" });
+
+  const lockScale = spring({
+    frame: frame - 50,
+    fps,
+    config: { damping: 8, stiffness: 100, mass: 0.5 },
   });
 
-  const cardOpacity = interpolate(frame, [15, 35], [0, 1], {
-    extrapolateRight: "clamp",
-  });
-
-  const highlightIndex = Math.floor(
-    interpolate(frame, [40, 180], [0, lockingDetails.fields.length], {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-    })
+  const pulseOpacity = interpolate(
+    (frame % 60),
+    [0, 30, 60],
+    [0.3, 0.8, 0.3],
+    { extrapolateRight: "clamp" }
   );
 
-  const explanationOpacity = interpolate(frame, [50, 70], [0, 1], {
-    extrapolateRight: "clamp",
-  });
-
-  const lockedBadgeScale = spring({
-    frame: frame - 60,
-    fps,
-    config: { damping: 10, stiffness: 100, mass: 0.5 },
-  });
-
-  const getExplanation = (index: number): string => {
-    const explanations: Record<number, string> = {
-      0: "The candidate has filled 41 college choices in order of preference. This is a comprehensive list covering top IITs, NITs, and other institutions.",
-      1: "'System Locked' means the choices have been automatically locked by the system after the deadline, and no further changes can be made.",
-      2: "The IP address from which the choices were last saved - used for security and verification purposes.",
-      3: "The last modification was on June 9, 2025 at 8:02 AM IST, capturing the exact moment of final submission.",
-      4: "A unique cryptographic code that verifies the authenticity and integrity of the locked choices - prevents tampering.",
-    };
-    return explanations[index] || "";
-  };
+  const icons = ["📊", "🔒", "🌐", "📅", "🔐"];
 
   return (
-    <AbsoluteFill style={containerStyle}>
+    <AbsoluteFill
+      style={{
+        background: "linear-gradient(135deg, #0a0a0f 0%, #0a0f1a 50%, #1a0a1a 100%)",
+        padding: "50px 60px",
+        overflow: "hidden",
+      }}
+    >
+      {/* Animated lock rings */}
       <div
         style={{
-          opacity: titleOpacity,
-          marginBottom: "30px",
+          position: "absolute",
+          top: "50%",
+          left: "25%",
+          transform: "translate(-50%, -50%)",
         }}
       >
-        <h1
-          style={{
-            fontSize: "48px",
-            fontWeight: "bold",
-            color: colors.primary,
-            margin: "0 0 5px 0",
-            textAlign: "center",
-          }}
-        >
-          Section 4: Locking of Choices
-        </h1>
-        <p
-          style={{
-            fontSize: "22px",
-            color: colors.lightText,
-            margin: "0",
-            textAlign: "center",
-          }}
-        >
-          Status and verification details of the submitted choices
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              width: `${200 + i * 80}px`,
+              height: `${200 + i * 80}px`,
+              borderRadius: "50%",
+              border: `2px solid ${colors.neonOrange}${30 - i * 10}`,
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              opacity: pulseOpacity * (1 - i * 0.2),
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Header */}
+      <div
+        style={{
+          opacity: headerOpacity,
+          transform: `translateY(${headerY}px)`,
+          marginBottom: "30px",
+          position: "relative",
+          zIndex: 10,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "20px", justifyContent: "center" }}>
+          <div
+            style={{
+              background: `linear-gradient(135deg, ${colors.neonOrange}, ${colors.neonYellow})`,
+              borderRadius: "12px",
+              padding: "10px 20px",
+              boxShadow: `0 0 30px ${colors.neonOrange}50`,
+            }}
+          >
+            <span style={{ fontSize: "18px", fontWeight: "700", color: colors.darkBg }}>04</span>
+          </div>
+          <h1 style={{ fontSize: "42px", fontWeight: "800", color: colors.white, margin: 0 }}>
+            Locking Status
+          </h1>
+        </div>
+        <p style={{ fontSize: "18px", color: colors.textSecondary, margin: "12px 0 0 0", textAlign: "center" }}>
+          Choice verification and security details
         </p>
       </div>
 
-      <div style={{ display: "flex", gap: "30px", flex: 1 }}>
+      {/* Main content */}
+      <div style={{ display: "flex", gap: "30px", flex: 1, position: "relative", zIndex: 10 }}>
+        {/* Left: Lock animation */}
         <div
           style={{
-            ...cardStyle,
-            opacity: cardOpacity,
-            flex: "2",
-          }}
-        >
-          <h2 style={sectionTitleStyle}>{lockingDetails.title}</h2>
-
-          <div style={{ padding: "25px" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "20px" }}>
-              <tbody>
-                {lockingDetails.fields.map((field, index) => {
-                  const isHighlighted = index === highlightIndex;
-                  const rowSpring = spring({
-                    frame: frame - 40 - index * 20,
-                    fps,
-                    config: { damping: 100, stiffness: 200, mass: 0.5 },
-                  });
-
-                  return (
-                    <tr
-                      key={index}
-                      style={{
-                        backgroundColor: isHighlighted ? colors.highlight : index % 2 === 0 ? colors.tableRow : colors.white,
-                        boxShadow: isHighlighted ? `inset 4px 0 0 ${colors.accent}` : "none",
-                        opacity: rowSpring,
-                      }}
-                    >
-                      <td
-                        style={{
-                          padding: "18px 25px",
-                          fontWeight: "600",
-                          color: colors.text,
-                          width: "45%",
-                          borderBottom: `1px solid ${colors.border}`,
-                        }}
-                      >
-                        {field.label}
-                      </td>
-                      <td
-                        style={{
-                          padding: "18px 25px",
-                          color: isHighlighted ? colors.accent : colors.text,
-                          fontWeight: isHighlighted ? "bold" : "normal",
-                          fontSize: field.label === "Locking Code" ? "14px" : "20px",
-                          fontFamily: field.label === "Locking Code" ? "monospace" : "inherit",
-                          borderBottom: `1px solid ${colors.border}`,
-                          wordBreak: field.label === "Locking Code" ? "break-all" : "normal",
-                        }}
-                      >
-                        {field.value}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div
-          style={{
-            flex: "1",
+            width: "350px",
             display: "flex",
             flexDirection: "column",
-            gap: "20px",
-            opacity: interpolate(frame, [80, 110], [0, 1], { extrapolateRight: "clamp" }),
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
           <div
             style={{
-              backgroundColor: colors.success,
-              color: colors.white,
-              padding: "30px",
-              borderRadius: "16px",
-              textAlign: "center",
-              transform: `scale(${lockedBadgeScale})`,
+              transform: `scale(${Math.max(0, lockScale)})`,
+              opacity: lockScale,
             }}
           >
-            <div style={{ fontSize: "48px", marginBottom: "10px" }}>🔒</div>
-            <h3 style={{ fontSize: "28px", margin: "0 0 10px 0" }}>System Locked</h3>
-            <p style={{ fontSize: "16px", margin: 0, opacity: 0.9 }}>
+            <div
+              style={{
+                width: "200px",
+                height: "200px",
+                borderRadius: "50%",
+                background: `linear-gradient(135deg, ${colors.neonOrange}, ${colors.neonYellow})`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: `0 0 60px ${colors.neonOrange}60, 0 20px 40px rgba(0,0,0,0.3)`,
+              }}
+            >
+              <span style={{ fontSize: "80px" }}>🔒</span>
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: "30px",
+              textAlign: "center",
+              opacity: interpolate(frame, [100, 130], [0, 1], { extrapolateRight: "clamp" }),
+            }}
+          >
+            <p
+              style={{
+                fontSize: "28px",
+                fontWeight: "800",
+                color: colors.neonGreen,
+                margin: "0 0 8px 0",
+                textShadow: `0 0 20px ${colors.neonGreen}60`,
+              }}
+            >
+              SYSTEM LOCKED
+            </p>
+            <p style={{ fontSize: "14px", color: colors.textSecondary, margin: 0 }}>
               Choices are final and secure
             </p>
           </div>
 
+          {/* Stats cards */}
           <div
             style={{
-              backgroundColor: colors.primary,
-              color: colors.white,
-              padding: "25px",
-              borderRadius: "16px",
-              textAlign: "center",
+              display: "flex",
+              gap: "15px",
+              marginTop: "30px",
+              opacity: interpolate(frame, [140, 170], [0, 1], { extrapolateRight: "clamp" }),
             }}
           >
-            <h3 style={{ fontSize: "56px", margin: "0", fontWeight: "bold" }}>41</h3>
-            <p style={{ fontSize: "18px", margin: "5px 0 0 0" }}>Total Choices Filed</p>
-          </div>
-
-          <div
-            style={{
-              backgroundColor: colors.secondary,
-              color: colors.white,
-              padding: "20px",
-              borderRadius: "16px",
-            }}
-          >
-            <h4 style={{ fontSize: "16px", margin: "0 0 8px 0", opacity: 0.8 }}>Last Saved</h4>
-            <p style={{ fontSize: "18px", margin: 0, fontWeight: "bold" }}>
-              09 Jun 2025
-              <br />
-              08:02 IST
-            </p>
+            <div
+              style={{
+                background: `linear-gradient(135deg, ${colors.neonOrange}20, ${colors.neonOrange}10)`,
+                border: `1px solid ${colors.neonOrange}50`,
+                borderRadius: "16px",
+                padding: "20px 25px",
+                textAlign: "center",
+              }}
+            >
+              <p style={{ fontSize: "36px", fontWeight: "900", color: colors.neonOrange, margin: 0 }}>41</p>
+              <p style={{ fontSize: "12px", color: colors.textSecondary, margin: "5px 0 0 0" }}>Choices</p>
+            </div>
+            <div
+              style={{
+                background: `linear-gradient(135deg, ${colors.neonGreen}20, ${colors.neonGreen}10)`,
+                border: `1px solid ${colors.neonGreen}50`,
+                borderRadius: "16px",
+                padding: "20px 25px",
+                textAlign: "center",
+              }}
+            >
+              <p style={{ fontSize: "36px", fontWeight: "900", color: colors.neonGreen, margin: 0 }}>✓</p>
+              <p style={{ fontSize: "12px", color: colors.textSecondary, margin: "5px 0 0 0" }}>Verified</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div
-        style={{
-          ...explanationBoxStyle,
-          opacity: explanationOpacity,
-          marginTop: "20px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "15px" }}>
-          <div
-            style={{
-              backgroundColor: colors.accent,
-              color: colors.white,
-              padding: "10px 20px",
-              borderRadius: "20px",
-              fontSize: "18px",
-              fontWeight: "bold",
-              whiteSpace: "nowrap",
-            }}
-          >
-            What This Means
-          </div>
-          <p style={{ margin: 0, fontSize: "20px", lineHeight: 1.6 }}>
-            {getExplanation(highlightIndex)}
-          </p>
+        {/* Right: Details */}
+        <div
+          style={{
+            flex: 1,
+            background: "rgba(255, 255, 255, 0.02)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "24px",
+            padding: "30px",
+          }}
+        >
+          <h3 style={{ fontSize: "18px", color: colors.white, margin: "0 0 24px 0", fontWeight: "600" }}>
+            Verification Details
+          </h3>
+
+          {lockingDetails.fields.map((field, index) => {
+            const delay = 60 + index * 20;
+            const cardOpacity = interpolate(frame, [delay, delay + 30], [0, 1], { extrapolateRight: "clamp" });
+            const cardX = interpolate(frame, [delay, delay + 30], [30, 0], { extrapolateRight: "clamp" });
+
+            return (
+              <div
+                key={index}
+                style={{
+                  background: "rgba(255, 255, 255, 0.03)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  borderRadius: "16px",
+                  padding: "20px",
+                  marginBottom: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "16px",
+                  opacity: cardOpacity,
+                  transform: `translateX(${cardX}px)`,
+                }}
+              >
+                <div
+                  style={{
+                    width: "48px",
+                    height: "48px",
+                    borderRadius: "12px",
+                    background: `linear-gradient(135deg, ${colors.neonOrange}30, ${colors.neonYellow}30)`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "22px",
+                    flexShrink: 0,
+                  }}
+                >
+                  {icons[index]}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: "13px", color: colors.textMuted, margin: "0 0 4px 0" }}>{field.label}</p>
+                  <p
+                    style={{
+                      fontSize: field.label === "Locking Code" ? "12px" : "16px",
+                      color: field.label === "Locking Status" ? colors.neonGreen : colors.white,
+                      margin: 0,
+                      fontWeight: "600",
+                      fontFamily: field.label === "Locking Code" || field.label === "Locking IP" ? "monospace" : "inherit",
+                      wordBreak: field.label === "Locking Code" ? "break-all" : "normal",
+                    }}
+                  >
+                    {field.value}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
-
     </AbsoluteFill>
   );
 };

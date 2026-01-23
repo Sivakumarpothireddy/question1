@@ -1,213 +1,271 @@
 import { AbsoluteFill, interpolate, useCurrentFrame, spring, useVideoConfig } from "remotion";
-import { colors, containerStyle, cardStyle } from "../styles";
+import { colors } from "../styles";
 import { declaration } from "../data";
 
 export const DeclarationSection: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const titleOpacity = interpolate(frame, [0, 20], [0, 1], {
-    extrapolateRight: "clamp",
-  });
-
-  const cardOpacity = interpolate(frame, [15, 35], [0, 1], {
-    extrapolateRight: "clamp",
-  });
+  const headerOpacity = interpolate(frame, [0, 30], [0, 1], { extrapolateRight: "clamp" });
+  const headerY = interpolate(frame, [0, 30], [-40, 0], { extrapolateRight: "clamp" });
 
   const cardScale = spring({
-    frame: frame - 15,
+    frame: frame - 40,
     fps,
-    config: { damping: 15, stiffness: 100, mass: 0.5 },
+    config: { damping: 12, stiffness: 100, mass: 0.5 },
   });
 
-  const checkmarkScale = spring({
-    frame: frame - 80,
+  const checkScale = spring({
+    frame: frame - 120,
     fps,
-    config: { damping: 10, stiffness: 200, mass: 0.3 },
+    config: { damping: 8, stiffness: 200, mass: 0.3 },
   });
 
-  const noteOpacity = interpolate(frame, [100, 130], [0, 1], {
-    extrapolateRight: "clamp",
-  });
+  const badgesOpacity = interpolate(frame, [180, 210], [0, 1], { extrapolateRight: "clamp" });
 
   return (
-    <AbsoluteFill style={containerStyle}>
+    <AbsoluteFill
+      style={{
+        background: "linear-gradient(135deg, #0a0a0f 0%, #0a1a0f 50%, #0f1a0a 100%)",
+        padding: "50px 60px",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {/* Background decorations */}
       <div
         style={{
-          opacity: titleOpacity,
+          position: "absolute",
+          top: "20%",
+          right: "10%",
+          width: "400px",
+          height: "400px",
+          borderRadius: "50%",
+          background: `radial-gradient(circle, ${colors.neonGreen}10 0%, transparent 70%)`,
+          filter: "blur(60px)",
+        }}
+      />
+
+      {/* Header */}
+      <div
+        style={{
+          opacity: headerOpacity,
+          transform: `translateY(${headerY}px)`,
           marginBottom: "40px",
+          position: "relative",
+          zIndex: 10,
         }}
       >
-        <h1
-          style={{
-            fontSize: "48px",
-            fontWeight: "bold",
-            color: colors.primary,
-            margin: "0 0 5px 0",
-            textAlign: "center",
-          }}
-        >
-          Section 6: Declaration
-        </h1>
-        <p
-          style={{
-            fontSize: "22px",
-            color: colors.lightText,
-            margin: "0",
-            textAlign: "center",
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "center", gap: "20px", justifyContent: "center" }}>
+          <div
+            style={{
+              background: `linear-gradient(135deg, ${colors.neonGreen}, ${colors.neonBlue})`,
+              borderRadius: "12px",
+              padding: "10px 20px",
+              boxShadow: `0 0 30px ${colors.neonGreen}50`,
+            }}
+          >
+            <span style={{ fontSize: "18px", fontWeight: "700", color: colors.white }}>06</span>
+          </div>
+          <h1 style={{ fontSize: "42px", fontWeight: "800", color: colors.white, margin: 0 }}>
+            Declaration
+          </h1>
+        </div>
+        <p style={{ fontSize: "18px", color: colors.textSecondary, margin: "12px 0 0 0", textAlign: "center" }}>
           Acknowledgment and agreement to JoSAA rules
         </p>
       </div>
 
+      {/* Main card */}
       <div
         style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
           flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+          zIndex: 10,
         }}
       >
         <div
           style={{
-            ...cardStyle,
-            opacity: cardOpacity,
-            transform: `scale(${cardScale})`,
-            maxWidth: "1000px",
+            maxWidth: "900px",
             width: "100%",
+            transform: `scale(${Math.max(0, cardScale)})`,
+            opacity: cardScale,
           }}
         >
           <div
             style={{
-              backgroundColor: colors.primary,
-              padding: "25px 35px",
-              borderRadius: "12px 12px 0 0",
+              background: "rgba(255, 255, 255, 0.03)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+              borderRadius: "32px",
+              overflow: "hidden",
+              boxShadow: `0 0 60px ${colors.neonGreen}10, 0 20px 60px rgba(0,0,0,0.3)`,
             }}
           >
-            <h2
-              style={{
-                fontSize: "32px",
-                fontWeight: "bold",
-                color: colors.white,
-                margin: 0,
-                display: "flex",
-                alignItems: "center",
-                gap: "15px",
-              }}
-            >
-              <span style={{ fontSize: "36px" }}>📋</span>
-              {declaration.title}
-            </h2>
-          </div>
-
-          <div style={{ padding: "40px" }}>
+            {/* Card header */}
             <div
               style={{
-                backgroundColor: colors.highlight,
-                border: `2px solid ${colors.accent}`,
-                borderRadius: "12px",
-                padding: "30px",
-                marginBottom: "30px",
-              }}
-            >
-              <h3
-                style={{
-                  fontSize: "24px",
-                  color: colors.primary,
-                  margin: "0 0 20px 0",
-                  fontWeight: "bold",
-                }}
-              >
-                {declaration.heading}
-              </h3>
-              <p
-                style={{
-                  fontSize: "20px",
-                  color: colors.text,
-                  lineHeight: 1.8,
-                  margin: 0,
-                }}
-              >
-                {declaration.content}
-              </p>
-            </div>
-
-            <div
-              style={{
+                background: `linear-gradient(135deg, ${colors.neonGreen}30, ${colors.neonBlue}30)`,
+                padding: "30px 40px",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
                 gap: "20px",
-                transform: `scale(${checkmarkScale})`,
               }}
             >
               <div
                 style={{
                   width: "60px",
                   height: "60px",
-                  backgroundColor: colors.success,
-                  borderRadius: "50%",
+                  borderRadius: "16px",
+                  background: `linear-gradient(135deg, ${colors.neonGreen}, ${colors.neonBlue})`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "32px",
-                  color: colors.white,
+                  fontSize: "28px",
                 }}
               >
-                ✓
+                📋
               </div>
-              <span
+              <div>
+                <h2 style={{ fontSize: "24px", fontWeight: "700", color: colors.white, margin: 0 }}>
+                  {declaration.title}
+                </h2>
+                <p style={{ fontSize: "14px", color: colors.textSecondary, margin: "4px 0 0 0" }}>
+                  Business Rules Agreement
+                </p>
+              </div>
+            </div>
+
+            {/* Card content */}
+            <div style={{ padding: "40px" }}>
+              <div
                 style={{
-                  fontSize: "24px",
-                  color: colors.success,
-                  fontWeight: "bold",
+                  background: "rgba(255, 255, 255, 0.02)",
+                  border: `1px solid ${colors.neonGreen}30`,
+                  borderRadius: "20px",
+                  padding: "30px",
+                  marginBottom: "30px",
                 }}
               >
-                Declaration Acknowledged
-              </span>
+                <h3
+                  style={{
+                    fontSize: "20px",
+                    color: colors.neonGreen,
+                    margin: "0 0 20px 0",
+                    fontWeight: "700",
+                  }}
+                >
+                  {declaration.heading}
+                </h3>
+                <p
+                  style={{
+                    fontSize: "18px",
+                    color: colors.textPrimary,
+                    lineHeight: 1.8,
+                    margin: 0,
+                  }}
+                >
+                  {declaration.content}
+                </p>
+              </div>
+
+              {/* Checkmark */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "20px",
+                  transform: `scale(${Math.max(0, checkScale)})`,
+                  opacity: checkScale,
+                }}
+              >
+                <div
+                  style={{
+                    width: "70px",
+                    height: "70px",
+                    borderRadius: "50%",
+                    background: `linear-gradient(135deg, ${colors.neonGreen}, ${colors.neonBlue})`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: `0 0 40px ${colors.neonGreen}60`,
+                  }}
+                >
+                  <span style={{ fontSize: "36px", color: colors.white }}>✓</span>
+                </div>
+                <div>
+                  <p
+                    style={{
+                      fontSize: "24px",
+                      color: colors.neonGreen,
+                      margin: 0,
+                      fontWeight: "700",
+                      textShadow: `0 0 20px ${colors.neonGreen}50`,
+                    }}
+                  >
+                    Declaration Acknowledged
+                  </p>
+                  <p style={{ fontSize: "14px", color: colors.textSecondary, margin: "4px 0 0 0" }}>
+                    Submitted and verified
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Bottom info badges */}
       <div
         style={{
-          opacity: noteOpacity,
           display: "flex",
           justifyContent: "center",
-          gap: "30px",
+          gap: "20px",
           marginTop: "30px",
+          opacity: badgesOpacity,
+          position: "relative",
+          zIndex: 10,
         }}
       >
         <div
           style={{
-            backgroundColor: colors.secondary,
-            color: colors.white,
+            background: "rgba(255, 255, 255, 0.03)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            borderRadius: "16px",
             padding: "20px 30px",
-            borderRadius: "12px",
-            fontSize: "18px",
-            maxWidth: "400px",
-            textAlign: "center",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
           }}
         >
-          <strong>Important:</strong> By submitting, the candidate agrees to follow all JoSAA 2025 admission rules and processes.
+          <span style={{ fontSize: "24px" }}>⚖️</span>
+          <div>
+            <p style={{ fontSize: "12px", color: colors.textMuted, margin: 0 }}>LEGAL STATUS</p>
+            <p style={{ fontSize: "16px", color: colors.white, margin: "2px 0 0 0", fontWeight: "600" }}>Legally Binding</p>
+          </div>
         </div>
         <div
           style={{
-            backgroundColor: colors.accent,
-            color: colors.white,
+            background: "rgba(255, 255, 255, 0.03)",
+            border: "1px solid rgba(255, 255, 255, 0.1)",
+            borderRadius: "16px",
             padding: "20px 30px",
-            borderRadius: "12px",
-            fontSize: "18px",
-            maxWidth: "400px",
-            textAlign: "center",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
           }}
         >
-          <strong>Legal Binding:</strong> This declaration serves as the candidate's commitment to the admission process.
+          <span style={{ fontSize: "24px" }}>📜</span>
+          <div>
+            <p style={{ fontSize: "12px", color: colors.textMuted, margin: 0 }}>COMMITMENT</p>
+            <p style={{ fontSize: "16px", color: colors.white, margin: "2px 0 0 0", fontWeight: "600" }}>To JoSAA 2025 Rules</p>
+          </div>
         </div>
       </div>
-
     </AbsoluteFill>
   );
 };

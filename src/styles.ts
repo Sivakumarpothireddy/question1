@@ -1,31 +1,67 @@
 import { CSSProperties } from "react";
 
+// Modern Dark Theme with Neon Accents
 export const colors = {
-  primary: "#1a365d",
-  secondary: "#2c5282",
-  accent: "#3182ce",
-  highlight: "#ebf8ff",
-  text: "#2d3748",
-  lightText: "#718096",
+  // Dark backgrounds
+  darkBg: "#0a0a0f",
+  darkCard: "#12121a",
+  darkSurface: "#1a1a2e",
+
+  // Neon accents
+  neonBlue: "#00d4ff",
+  neonPurple: "#a855f7",
+  neonPink: "#ec4899",
+  neonGreen: "#22c55e",
+  neonOrange: "#f97316",
+  neonYellow: "#facc15",
+
+  // Text
   white: "#ffffff",
-  tableHeader: "#2b6cb0",
-  tableRow: "#f7fafc",
-  tableRowAlt: "#edf2f7",
-  success: "#38a169",
-  border: "#e2e8f0",
+  textPrimary: "#f0f0f5",
+  textSecondary: "#a0a0b0",
+  textMuted: "#606070",
+
+  // Glass effect colors
+  glassBg: "rgba(255, 255, 255, 0.05)",
+  glassBorder: "rgba(255, 255, 255, 0.1)",
+  glassHighlight: "rgba(255, 255, 255, 0.15)",
+
+  // Legacy (for compatibility)
+  primary: "#667eea",
+  secondary: "#764ba2",
+  accent: "#00d4ff",
+  success: "#22c55e",
+  warning: "#f97316",
+  text: "#f0f0f5",
+  lightText: "#a0a0b0",
+  border: "rgba(255, 255, 255, 0.1)",
+  tableRow: "rgba(255, 255, 255, 0.03)",
+  highlight: "rgba(0, 212, 255, 0.1)",
+  tableHeader: "#667eea",
 };
 
+// Modern container style with dark theme
 export const containerStyle: CSSProperties = {
   width: "100%",
   height: "100%",
-  backgroundColor: colors.white,
-  fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+  padding: "50px 60px",
+  fontFamily: "'Inter', 'Segoe UI', sans-serif",
   display: "flex",
   flexDirection: "column",
-  padding: "40px",
+  background: "linear-gradient(180deg, #0a0a0f 0%, #1a1a2e 100%)",
   boxSizing: "border-box",
 };
 
+// Glassmorphism card style
+export const glassCard: CSSProperties = {
+  background: "rgba(255, 255, 255, 0.05)",
+  backdropFilter: "blur(20px)",
+  borderRadius: "24px",
+  border: "1px solid rgba(255, 255, 255, 0.1)",
+  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+};
+
+// Legacy styles for compatibility
 export const headerStyle: CSSProperties = {
   textAlign: "center",
   marginBottom: "30px",
@@ -34,13 +70,13 @@ export const headerStyle: CSSProperties = {
 export const mainTitleStyle: CSSProperties = {
   fontSize: "42px",
   fontWeight: "bold",
-  color: colors.primary,
+  color: colors.neonBlue,
   margin: "0 0 10px 0",
 };
 
 export const subTitleStyle: CSSProperties = {
   fontSize: "24px",
-  color: colors.secondary,
+  color: colors.textSecondary,
   margin: "0",
 };
 
@@ -48,7 +84,6 @@ export const sectionTitleStyle: CSSProperties = {
   fontSize: "36px",
   fontWeight: "bold",
   color: colors.white,
-  backgroundColor: colors.tableHeader,
   padding: "15px 25px",
   borderRadius: "8px 8px 0 0",
   margin: "0",
@@ -69,50 +104,45 @@ export const tableCellStyle: CSSProperties = {
 export const labelCellStyle: CSSProperties = {
   ...tableCellStyle,
   fontWeight: "600",
-  color: colors.text,
+  color: colors.textPrimary,
   width: "40%",
-  backgroundColor: colors.tableRow,
 };
 
 export const valueCellStyle: CSSProperties = {
   ...tableCellStyle,
-  color: colors.text,
-  backgroundColor: colors.white,
+  color: colors.textPrimary,
 };
 
 export const highlightedRowStyle: CSSProperties = {
-  backgroundColor: colors.highlight,
-  boxShadow: `0 0 10px ${colors.accent}`,
+  boxShadow: `0 0 20px ${colors.neonBlue}40`,
 };
 
 export const explanationBoxStyle: CSSProperties = {
-  backgroundColor: colors.highlight,
-  border: `2px solid ${colors.accent}`,
-  borderRadius: "8px",
+  backgroundColor: colors.glassBg,
+  border: `2px solid ${colors.neonBlue}`,
+  borderRadius: "16px",
   padding: "20px",
   marginTop: "20px",
   fontSize: "22px",
-  color: colors.text,
+  color: colors.textPrimary,
   lineHeight: 1.6,
+};
+
+export const cardStyle: CSSProperties = {
+  ...glassCard,
+  overflow: "hidden",
+  flex: 1,
 };
 
 export const pointerStyle: CSSProperties = {
   width: "30px",
   height: "30px",
-  backgroundColor: colors.accent,
+  backgroundColor: colors.neonBlue,
   borderRadius: "50%",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  color: colors.white,
+  color: colors.darkBg,
   fontSize: "18px",
   fontWeight: "bold",
-};
-
-export const cardStyle: CSSProperties = {
-  backgroundColor: colors.white,
-  borderRadius: "12px",
-  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-  overflow: "hidden",
-  flex: 1,
 };
