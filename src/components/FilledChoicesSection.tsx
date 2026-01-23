@@ -1,77 +1,87 @@
-import { AbsoluteFill, interpolate, useCurrentFrame, spring, useVideoConfig, Easing } from "remotion";
+import { AbsoluteFill, interpolate, useCurrentFrame, spring, useVideoConfig } from "remotion";
 import { colors } from "../styles";
 import { filledChoices } from "../data";
 
-const SUBSECTION_DURATION = 600; // 10 seconds at 60fps
+const SUBSECTION_DURATION = 600;
 const CHOICES_PER_SUBSECTION = 3;
 const TOTAL_SUBSECTIONS = 14;
 
-// Floating particle component
-const Particle: React.FC<{
-  x: number;
-  y: number;
-  size: number;
-  color: string;
-  delay: number;
-  speed: number;
-  frame: number;
-}> = ({ x, y, size, color, delay, speed, frame }) => {
-  const float = Math.sin((frame + delay) * speed * 0.02) * 20;
-  const pulse = 0.5 + Math.sin((frame + delay) * 0.05) * 0.5;
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: `${x}%`,
-        top: `${y}%`,
-        width: size,
-        height: size,
-        borderRadius: "50%",
-        background: `radial-gradient(circle, ${color}, transparent)`,
-        transform: `translateY(${float}px)`,
-        opacity: pulse * 0.6,
-        filter: `blur(${size / 4}px)`,
-        pointerEvents: "none",
-      }}
-    />
-  );
+// Noise function for organic movement
+const noise = (x: number, y: number, t: number) => {
+  return Math.sin(x * 0.5 + t) * Math.cos(y * 0.3 + t * 0.7) * 0.5 + 0.5;
 };
 
-// Animated grid background
-const AnimatedGrid: React.FC<{ frame: number }> = ({ frame }) => {
-  const gridOffset = (frame * 0.5) % 60;
+// Animated DNA helix background
+const DNAHelix: React.FC<{ frame: number }> = ({ frame }) => {
+  const points = Array.from({ length: 30 }).map((_, i) => {
+    const y = (i / 30) * 120 - 10;
+    const wave1 = Math.sin((i * 0.3) + frame * 0.03) * 30;
+    const wave2 = Math.sin((i * 0.3) + frame * 0.03 + Math.PI) * 30;
+    return { y, x1: 50 + wave1, x2: 50 + wave2 };
+  });
 
   return (
-    <div
+    <svg
       style={{
         position: "absolute",
-        inset: 0,
+        right: "-5%",
+        top: "10%",
+        width: "300px",
+        height: "80%",
         opacity: 0.15,
-        backgroundImage: `
-          linear-gradient(${colors.neonPurple}20 1px, transparent 1px),
-          linear-gradient(90deg, ${colors.neonPurple}20 1px, transparent 1px)
-        `,
-        backgroundSize: "60px 60px",
-        backgroundPosition: `${gridOffset}px ${gridOffset}px`,
-        maskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)",
-        WebkitMaskImage: "radial-gradient(ellipse at center, black 30%, transparent 70%)",
+      }}
+    >
+      {points.map((p, i) => (
+        <g key={i}>
+          <circle cx={`${p.x1}%`} cy={`${p.y}%`} r="4" fill={colors.neonBlue} />
+          <circle cx={`${p.x2}%`} cy={`${p.y}%`} r="4" fill={colors.neonPink} />
+          {i % 3 === 0 && (
+            <line
+              x1={`${p.x1}%`}
+              y1={`${p.y}%`}
+              x2={`${p.x2}%`}
+              y2={`${p.y}%`}
+              stroke={colors.neonPurple}
+              strokeWidth="1"
+              opacity="0.5"
+            />
+          )}
+        </g>
+      ))}
+    </svg>
+  );
+};
+
+// Scanning line effect
+const ScanLine: React.FC<{ frame: number }> = ({ frame }) => {
+  const position = (frame * 2) % 150 - 25;
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        top: `${position}%`,
+        height: "2px",
+        background: `linear-gradient(90deg, transparent, ${colors.neonBlue}60, ${colors.neonPink}60, transparent)`,
+        boxShadow: `0 0 20px ${colors.neonBlue}, 0 0 40px ${colors.neonPink}40`,
+        opacity: 0.6,
+        pointerEvents: "none",
       }}
     />
   );
 };
 
-// Glowing orb component
-const GlowingOrb: React.FC<{
-  x: number;
-  y: number;
-  size: number;
-  color: string;
-  frame: number;
-  pulseSpeed: number;
-}> = ({ x, y, size, color, frame, pulseSpeed }) => {
-  const scale = 1 + Math.sin(frame * pulseSpeed) * 0.2;
-  const opacity = 0.3 + Math.sin(frame * pulseSpeed * 0.5) * 0.2;
+// Morphing blob background
+const MorphingBlob: React.FC<{ frame: number; color: string; x: number; y: number; size: number; speed: number }> = ({
+  frame, color, x, y, size, speed
+}) => {
+  const morph1 = 30 + Math.sin(frame * speed) * 20;
+  const morph2 = 30 + Math.cos(frame * speed * 0.7) * 20;
+  const morph3 = 30 + Math.sin(frame * speed * 1.3) * 20;
+  const morph4 = 30 + Math.cos(frame * speed * 0.5) * 20;
+  const rotation = frame * speed * 10;
 
   return (
     <div
@@ -81,66 +91,164 @@ const GlowingOrb: React.FC<{
         top: `${y}%`,
         width: size,
         height: size,
-        borderRadius: "50%",
-        background: `radial-gradient(circle, ${color}60 0%, ${color}20 40%, transparent 70%)`,
-        transform: `translate(-50%, -50%) scale(${scale})`,
-        opacity,
-        filter: "blur(40px)",
+        borderRadius: `${morph1}% ${morph2}% ${morph3}% ${morph4}%`,
+        background: `radial-gradient(circle, ${color}40 0%, ${color}10 50%, transparent 70%)`,
+        transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+        filter: "blur(30px)",
         pointerEvents: "none",
       }}
     />
   );
 };
 
-// Animated choice card with 3D effects
+// Hexagon grid pattern
+const HexGrid: React.FC<{ frame: number }> = ({ frame }) => {
+  const hexagons = Array.from({ length: 40 }).map((_, i) => ({
+    x: (i % 8) * 14 + (Math.floor(i / 8) % 2) * 7,
+    y: Math.floor(i / 8) * 12,
+    delay: i * 0.1,
+    pulse: Math.sin((frame + i * 10) * 0.05) * 0.5 + 0.5,
+  }));
+
+  return (
+    <div style={{ position: "absolute", inset: 0, opacity: 0.1, overflow: "hidden" }}>
+      {hexagons.map((hex, i) => (
+        <div
+          key={i}
+          style={{
+            position: "absolute",
+            left: `${hex.x}%`,
+            top: `${hex.y}%`,
+            width: "60px",
+            height: "52px",
+            clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+            background: `linear-gradient(135deg, ${colors.neonPurple}${Math.round(hex.pulse * 30).toString(16).padStart(2, '0')}, transparent)`,
+            border: `1px solid ${colors.neonPurple}20`,
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+// Electric arc effect
+const ElectricArc: React.FC<{ frame: number; startX: number; startY: number; endX: number; endY: number; color: string }> = ({
+  frame, startX, startY, endX, endY, color
+}) => {
+  const segments = 8;
+  const points = Array.from({ length: segments + 1 }).map((_, i) => {
+    const t = i / segments;
+    const baseX = startX + (endX - startX) * t;
+    const baseY = startY + (endY - startY) * t;
+    const offset = i > 0 && i < segments ? (Math.random() - 0.5) * 20 * Math.sin(frame * 0.5 + i) : 0;
+    return `${baseX + offset},${baseY + offset}`;
+  });
+
+  return (
+    <svg style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.4 }}>
+      <polyline
+        points={points.join(" ")}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        filter={`drop-shadow(0 0 5px ${color})`}
+      />
+    </svg>
+  );
+};
+
+// Glitch text effect component
+const GlitchText: React.FC<{ text: string; frame: number; color: string; size: string }> = ({ text, frame, color, size }) => {
+  const glitchActive = Math.sin(frame * 0.3) > 0.95;
+  const offset = glitchActive ? Math.random() * 4 - 2 : 0;
+  const skew = glitchActive ? Math.random() * 2 - 1 : 0;
+
+  return (
+    <div style={{ position: "relative", display: "inline-block" }}>
+      {/* Red channel */}
+      <span
+        style={{
+          position: "absolute",
+          left: glitchActive ? -2 : 0,
+          color: colors.neonPink,
+          fontSize: size,
+          fontWeight: 900,
+          opacity: glitchActive ? 0.7 : 0,
+          transform: `skewX(${skew}deg)`,
+        }}
+      >
+        {text}
+      </span>
+      {/* Blue channel */}
+      <span
+        style={{
+          position: "absolute",
+          left: glitchActive ? 2 : 0,
+          color: colors.neonBlue,
+          fontSize: size,
+          fontWeight: 900,
+          opacity: glitchActive ? 0.7 : 0,
+          transform: `skewX(${-skew}deg)`,
+        }}
+      >
+        {text}
+      </span>
+      {/* Main text */}
+      <span
+        style={{
+          position: "relative",
+          color: color,
+          fontSize: size,
+          fontWeight: 900,
+          transform: `translateX(${offset}px)`,
+        }}
+      >
+        {text}
+      </span>
+    </div>
+  );
+};
+
+// Animated choice card with extreme effects
 const ChoiceCard: React.FC<{
   choice: { no: number; institute: string; program: string };
   index: number;
   frame: number;
   fps: number;
-  totalInView: number;
-}> = ({ choice, index, frame, fps, totalInView }) => {
-  // Staggered entrance
-  const entranceDelay = index * 12;
+}> = ({ choice, index, frame, fps }) => {
+  const entranceDelay = index * 15;
 
-  // Spring animation for entrance
-  const entranceProgress = spring({
-    frame: frame - entranceDelay,
-    fps,
-    config: { damping: 12, stiffness: 80, mass: 1 },
-  });
+  // Multi-stage entrance animation
+  const stage1 = spring({ frame: frame - entranceDelay, fps, config: { damping: 15, stiffness: 100 } });
+  const stage2 = spring({ frame: frame - entranceDelay - 10, fps, config: { damping: 12, stiffness: 80 } });
+  const stage3 = spring({ frame: frame - entranceDelay - 20, fps, config: { damping: 10, stiffness: 60 } });
 
-  // 3D rotation on entrance
-  const rotateX = interpolate(entranceProgress, [0, 1], [45, 0]);
-  const rotateY = interpolate(entranceProgress, [0, 1], [-30, 0]);
-  const translateZ = interpolate(entranceProgress, [0, 1], [-200, 0]);
-  const translateY = interpolate(entranceProgress, [0, 1], [100, 0]);
-  const scale = interpolate(entranceProgress, [0, 1], [0.5, 1]);
-  const opacity = interpolate(entranceProgress, [0, 1], [0, 1]);
+  // 3D transforms
+  const rotateX = interpolate(stage1, [0, 1], [90, 0]);
+  const rotateY = interpolate(stage1, [0, 1], [-45, 0]);
+  const rotateZ = interpolate(stage1, [0, 1], [15, 0]);
+  const translateZ = interpolate(stage1, [0, 1], [-500, 0]);
+  const translateY = interpolate(stage1, [0, 1], [200, 0]);
+  const translateX = interpolate(stage1, [0, 1], [-100, 0]);
+  const scale = interpolate(stage1, [0, 1], [0.3, 1]);
+  const opacity = interpolate(stage1, [0, 1], [0, 1]);
 
-  // Floating animation after entrance
-  const floatOffset = Math.sin((frame + index * 50) * 0.03) * 5;
+  // Continuous floating
+  const floatY = Math.sin((frame + index * 40) * 0.02) * 8;
+  const floatX = Math.cos((frame + index * 30) * 0.015) * 4;
+  const floatRotate = Math.sin((frame + index * 50) * 0.01) * 1;
 
-  // Glow pulse
-  const glowPulse = 0.5 + Math.sin((frame + index * 30) * 0.05) * 0.3;
+  // Glow intensity
+  const glowIntensity = 0.6 + Math.sin((frame + index * 20) * 0.04) * 0.4;
 
-  const getInstituteColor = (institute: string): string => {
+  // Color functions
+  const getColor = (institute: string): string => {
     if (institute.includes("Indian Institute of Technology")) return colors.neonBlue;
     if (institute.includes("National Institute of Technology")) return colors.neonGreen;
     return colors.neonPink;
   };
 
-  const getInstituteGradient = (institute: string): string => {
-    if (institute.includes("Indian Institute of Technology")) {
-      return `linear-gradient(135deg, ${colors.neonBlue}40, ${colors.neonPurple}40)`;
-    }
-    if (institute.includes("National Institute of Technology")) {
-      return `linear-gradient(135deg, ${colors.neonGreen}40, ${colors.neonBlue}40)`;
-    }
-    return `linear-gradient(135deg, ${colors.neonPink}40, ${colors.neonOrange}40)`;
-  };
-
-  const getInstituteTag = (institute: string): string => {
+  const getTag = (institute: string): string => {
     if (institute.includes("Indian Institute of Technology")) return "IIT";
     if (institute.includes("National Institute of Technology")) return "NIT";
     return "GFTI";
@@ -158,238 +266,256 @@ const ChoiceCard: React.FC<{
     .replace("(4 Years, Bachelor of Science)", "B.Sc")
     .trim();
 
-  const color = getInstituteColor(choice.institute);
-  const tag = getInstituteTag(choice.institute);
+  const color = getColor(choice.institute);
+  const tag = getTag(choice.institute);
 
-  // Animated counter for rank number
-  const counterProgress = spring({
-    frame: frame - entranceDelay - 15,
-    fps,
-    config: { damping: 15, stiffness: 60, mass: 1 },
-  });
+  // Animated counter
+  const counterProgress = spring({ frame: frame - entranceDelay - 25, fps, config: { damping: 20, stiffness: 50 } });
   const displayNumber = Math.round(interpolate(counterProgress, [0, 1], [0, choice.no]));
 
-  // Progress bar animation
-  const barProgress = spring({
-    frame: frame - entranceDelay - 20,
-    fps,
-    config: { damping: 18, stiffness: 70, mass: 0.8 },
-  });
-  const barWidth = Math.max(40, 100 - (choice.no * 1.5));
+  // Bar animation with overshoot
+  const barProgress = spring({ frame: frame - entranceDelay - 30, fps, config: { damping: 8, stiffness: 50, mass: 0.5 } });
+  const barWidth = Math.max(35, 100 - (choice.no * 1.5));
 
-  // Shine sweep animation
-  const shinePosition = interpolate(
-    (frame - entranceDelay - 30) % 120,
-    [0, 120],
-    [-100, 200],
-    { extrapolateRight: "clamp" }
-  );
+  // Shine position
+  const shinePos = ((frame - entranceDelay) * 1.5) % 300 - 100;
+
+  // Text reveal
+  const textReveal = interpolate(stage2, [0, 1], [0, 100]);
 
   return (
-    <div
-      style={{
-        perspective: "1000px",
-        marginBottom: "30px",
-      }}
-    >
+    <div style={{ perspective: "2000px", marginBottom: "24px" }}>
       <div
         style={{
           transform: `
             rotateX(${rotateX}deg)
             rotateY(${rotateY}deg)
+            rotateZ(${rotateZ + floatRotate}deg)
+            translateX(${translateX + floatX}px)
+            translateY(${translateY + floatY}px)
             translateZ(${translateZ}px)
-            translateY(${translateY + floatOffset}px)
             scale(${scale})
           `,
           opacity,
           transformStyle: "preserve-3d",
         }}
       >
-        {/* Card container */}
+        {/* Card glow effect */}
         <div
           style={{
-            background: getInstituteGradient(choice.institute),
-            backdropFilter: "blur(20px)",
-            border: `2px solid ${color}50`,
-            borderRadius: "24px",
-            padding: "28px 32px",
+            position: "absolute",
+            inset: "-20px",
+            background: `radial-gradient(ellipse at center, ${color}30 0%, transparent 70%)`,
+            filter: "blur(20px)",
+            opacity: glowIntensity,
+            borderRadius: "40px",
+          }}
+        />
+
+        {/* Main card */}
+        <div
+          style={{
+            background: `linear-gradient(135deg, rgba(20,20,35,0.95) 0%, rgba(30,20,40,0.95) 100%)`,
+            backdropFilter: "blur(30px)",
+            border: `2px solid ${color}60`,
+            borderRadius: "20px",
+            padding: "24px 28px",
             position: "relative",
             overflow: "hidden",
             boxShadow: `
-              0 0 ${40 * glowPulse}px ${color}30,
-              0 20px 60px rgba(0,0,0,0.4),
-              inset 0 1px 0 rgba(255,255,255,0.1)
+              0 0 ${60 * glowIntensity}px ${color}40,
+              0 30px 60px rgba(0,0,0,0.5),
+              inset 0 1px 0 rgba(255,255,255,0.1),
+              inset 0 -1px 0 rgba(0,0,0,0.3)
             `,
           }}
         >
-          {/* Animated shine sweep */}
+          {/* Animated border gradient */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: "20px",
+              padding: "2px",
+              background: `conic-gradient(from ${frame * 2}deg, ${color}, ${colors.neonPurple}, ${color})`,
+              WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+              WebkitMaskComposite: "xor",
+              maskComposite: "exclude",
+              opacity: 0.5,
+            }}
+          />
+
+          {/* Multiple shine sweeps */}
           <div
             style={{
               position: "absolute",
               top: 0,
-              left: `${shinePosition}%`,
-              width: "50px",
+              left: `${shinePos}%`,
+              width: "60px",
               height: "100%",
-              background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)",
+              background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)`,
               transform: "skewX(-20deg)",
-              pointerEvents: "none",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: `${shinePos - 50}%`,
+              width: "30px",
+              height: "100%",
+              background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)`,
+              transform: "skewX(-20deg)",
             }}
           />
 
-          {/* Top section with rank */}
-          <div style={{ display: "flex", alignItems: "flex-start", gap: "24px" }}>
-            {/* Animated rank number */}
-            <div
-              style={{
-                position: "relative",
-                width: "100px",
-                height: "100px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              {/* Rotating ring */}
+          {/* Content layout - SIDE BY SIDE */}
+          <div style={{ display: "flex", alignItems: "center", gap: "24px", position: "relative", zIndex: 1 }}>
+            {/* Rank circle with effects */}
+            <div style={{ position: "relative", width: "90px", height: "90px", flexShrink: 0 }}>
+              {/* Outer spinning ring */}
+              <svg width="90" height="90" style={{ position: "absolute", transform: `rotate(${frame * 3}deg)` }}>
+                <defs>
+                  <linearGradient id={`grad-${choice.no}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor={color} />
+                    <stop offset="100%" stopColor={colors.neonPurple} />
+                  </linearGradient>
+                </defs>
+                <circle cx="45" cy="45" r="42" fill="none" stroke={`url(#grad-${choice.no})`} strokeWidth="2" strokeDasharray="8 4" />
+              </svg>
+
+              {/* Middle ring */}
+              <svg width="90" height="90" style={{ position: "absolute", transform: `rotate(${-frame * 2}deg)` }}>
+                <circle cx="45" cy="45" r="35" fill="none" stroke={color} strokeWidth="1.5" strokeDasharray="15 10" opacity="0.6" />
+              </svg>
+
+              {/* Inner pulsing circle */}
               <div
                 style={{
                   position: "absolute",
-                  inset: 0,
+                  inset: "15px",
                   borderRadius: "50%",
-                  border: `3px solid transparent`,
-                  borderTopColor: color,
-                  borderRightColor: `${color}50`,
-                  transform: `rotate(${frame * 2}deg)`,
-                  opacity: 0.8,
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  inset: "8px",
-                  borderRadius: "50%",
-                  border: `2px solid transparent`,
-                  borderBottomColor: color,
-                  borderLeftColor: `${color}30`,
-                  transform: `rotate(${-frame * 1.5}deg)`,
-                  opacity: 0.6,
+                  background: `radial-gradient(circle, ${color}30 0%, transparent 70%)`,
+                  transform: `scale(${1 + Math.sin(frame * 0.1) * 0.1})`,
                 }}
               />
 
               {/* Number */}
-              <div style={{ textAlign: "center", zIndex: 1 }}>
-                <div
-                  style={{
-                    fontSize: "42px",
-                    fontWeight: "900",
-                    color: colors.white,
-                    lineHeight: 1,
-                    textShadow: `0 0 30px ${color}`,
-                  }}
-                >
+              <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ fontSize: "36px", fontWeight: "900", color: colors.white, textShadow: `0 0 30px ${color}`, lineHeight: 1 }}>
                   {String(displayNumber).padStart(2, "0")}
+                </div>
+                <div style={{ fontSize: "9px", fontWeight: "700", color, letterSpacing: "2px", marginTop: "2px" }}>RANK</div>
+              </div>
+            </div>
+
+            {/* College and Course - SIDE BY SIDE */}
+            <div style={{ flex: 1, display: "flex", gap: "20px", alignItems: "center", minWidth: 0 }}>
+              {/* College Name */}
+              <div style={{ flex: 1.2, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+                  <div
+                    style={{
+                      background: `linear-gradient(135deg, ${color}, ${color}80)`,
+                      color: "#000",
+                      padding: "5px 12px",
+                      borderRadius: "6px",
+                      fontSize: "11px",
+                      fontWeight: "800",
+                      letterSpacing: "1px",
+                      boxShadow: `0 0 15px ${color}60`,
+                    }}
+                  >
+                    {tag}
+                  </div>
+                  <span style={{ fontSize: "10px", color: colors.textMuted, letterSpacing: "1px" }}>COLLEGE</span>
                 </div>
                 <div
                   style={{
-                    fontSize: "10px",
-                    fontWeight: "700",
-                    color: color,
-                    letterSpacing: "2px",
-                    marginTop: "4px",
+                    overflow: "hidden",
+                    clipPath: `inset(0 ${100 - textReveal}% 0 0)`,
                   }}
                 >
-                  RANK
+                  <h3
+                    style={{
+                      fontSize: "20px",
+                      fontWeight: "800",
+                      margin: 0,
+                      color: colors.white,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      textShadow: `0 2px 10px rgba(0,0,0,0.5)`,
+                    }}
+                  >
+                    {instituteShort}
+                  </h3>
+                </div>
+              </div>
+
+              {/* Vertical divider with glow */}
+              <div
+                style={{
+                  width: "2px",
+                  height: "60px",
+                  background: `linear-gradient(to bottom, transparent, ${color}, transparent)`,
+                  boxShadow: `0 0 10px ${color}60`,
+                  opacity: stage2,
+                }}
+              />
+
+              {/* Course/Program */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ marginBottom: "6px" }}>
+                  <span style={{ fontSize: "10px", color: colors.textMuted, letterSpacing: "1px" }}>PROGRAM</span>
+                </div>
+                <div
+                  style={{
+                    overflow: "hidden",
+                    clipPath: `inset(0 ${100 - textReveal}% 0 0)`,
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: "600",
+                      margin: 0,
+                      color: color,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {programShort}
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Institute info */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-                {/* Tag with pulse */}
-                <div
-                  style={{
-                    background: color,
-                    color: "#000",
-                    padding: "6px 14px",
-                    borderRadius: "8px",
-                    fontSize: "13px",
-                    fontWeight: "800",
-                    letterSpacing: "1px",
-                    boxShadow: `0 0 ${20 * glowPulse}px ${color}60`,
-                  }}
-                >
-                  {tag}
-                </div>
-                <span
-                  style={{
-                    fontSize: "14px",
-                    color: colors.textSecondary,
-                    fontWeight: "500",
-                  }}
-                >
-                  {programShort}
-                </span>
+            {/* Priority bar */}
+            <div style={{ width: "120px", flexShrink: 0 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                <span style={{ fontSize: "9px", color: colors.textMuted, letterSpacing: "1px" }}>PRIORITY</span>
+                <span style={{ fontSize: "12px", fontWeight: "800", color }}>{Math.round(barWidth)}%</span>
               </div>
-
-              {/* Institute name with gradient text */}
-              <h3
-                style={{
-                  fontSize: "26px",
-                  fontWeight: "800",
-                  margin: 0,
-                  background: `linear-gradient(90deg, ${colors.white}, ${color})`,
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
-              >
-                {instituteShort}
-              </h3>
-
-              {/* Animated progress bar */}
-              <div style={{ marginTop: "16px" }}>
+              <div style={{ height: "8px", background: "rgba(255,255,255,0.1)", borderRadius: "4px", overflow: "hidden" }}>
                 <div
                   style={{
-                    height: "8px",
-                    background: "rgba(255,255,255,0.1)",
+                    width: `${barWidth * barProgress}%`,
+                    height: "100%",
+                    background: `linear-gradient(90deg, ${color}, ${colors.neonPurple})`,
                     borderRadius: "4px",
-                    overflow: "hidden",
+                    boxShadow: `0 0 15px ${color}`,
                     position: "relative",
                   }}
                 >
                   <div
                     style={{
-                      width: `${barWidth * barProgress}%`,
-                      height: "100%",
-                      background: `linear-gradient(90deg, ${color}, ${color}80)`,
-                      borderRadius: "4px",
-                      boxShadow: `0 0 15px ${color}60`,
-                      position: "relative",
+                      position: "absolute",
+                      inset: 0,
+                      background: "linear-gradient(to bottom, rgba(255,255,255,0.4), transparent)",
                     }}
-                  >
-                    {/* Inner glow */}
-                    <div
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        background: "linear-gradient(to bottom, rgba(255,255,255,0.3), transparent)",
-                        borderRadius: "4px",
-                      }}
-                    />
-                  </div>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "6px",
-                    fontSize: "11px",
-                    color: colors.textMuted,
-                  }}
-                >
-                  <span>Priority Level</span>
-                  <span style={{ color, fontWeight: "700" }}>{Math.round(barWidth)}%</span>
+                  />
                 </div>
               </div>
             </div>
@@ -400,86 +526,149 @@ const ChoiceCard: React.FC<{
   );
 };
 
-// Animated section title
-const SectionTitle: React.FC<{ frame: number; fps: number; subsection: number; startIdx: number; endIdx: number; total: number }> = ({
-  frame,
-  fps,
-  subsection,
-  startIdx,
-  endIdx,
-  total,
+// Epic animated header
+const EpicHeader: React.FC<{ frame: number; fps: number; subsection: number; startIdx: number; endIdx: number; total: number }> = ({
+  frame, fps, subsection, startIdx, endIdx, total
 }) => {
-  const titleSpring = spring({
-    frame,
-    fps,
-    config: { damping: 15, stiffness: 100, mass: 0.8 },
-  });
+  const headerSpring = spring({ frame, fps, config: { damping: 12, stiffness: 80 } });
+  const titleScale = interpolate(headerSpring, [0, 1], [0.5, 1]);
+  const titleY = interpolate(headerSpring, [0, 1], [-80, 0]);
+  const titleOpacity = interpolate(headerSpring, [0, 1], [0, 1]);
 
-  const titleY = interpolate(titleSpring, [0, 1], [-50, 0]);
-  const titleOpacity = interpolate(titleSpring, [0, 1], [0, 1]);
-  const titleScale = interpolate(titleSpring, [0, 1], [0.8, 1]);
-
-  // Glitch effect for numbers
-  const glitchOffset = Math.random() > 0.98 ? Math.random() * 4 - 2 : 0;
+  // Letter by letter animation for title
+  const title = "FILLED CHOICES";
+  const letterDelay = 2;
 
   return (
     <div
       style={{
-        marginBottom: "40px",
-        transform: `translateY(${titleY}px) scale(${titleScale})`,
+        marginBottom: "35px",
+        transform: `translateY(${titleY}px)`,
         opacity: titleOpacity,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        {/* Left side */}
-        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          {/* Animated section badge */}
-          <div
-            style={{
-              position: "relative",
-              width: "80px",
-              height: "80px",
-            }}
-          >
-            {/* Outer rotating ring */}
-            <svg
-              width="80"
-              height="80"
-              style={{
-                position: "absolute",
-                transform: `rotate(${frame * 1}deg)`,
-              }}
-            >
-              <circle
-                cx="40"
-                cy="40"
-                r="36"
-                fill="none"
-                stroke={`${colors.neonPink}30`}
-                strokeWidth="2"
-                strokeDasharray="20 10"
-              />
+        {/* Left - animated title */}
+        <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+          {/* Section number with multiple rings */}
+          <div style={{ position: "relative", width: "100px", height: "100px" }}>
+            {/* Outermost ring */}
+            <svg width="100" height="100" style={{ position: "absolute", transform: `rotate(${frame}deg)` }}>
+              <circle cx="50" cy="50" r="48" fill="none" stroke={`${colors.neonPink}30`} strokeWidth="1" strokeDasharray="3 6" />
             </svg>
-            <svg
-              width="80"
-              height="80"
-              style={{
-                position: "absolute",
-                transform: `rotate(${-frame * 0.5}deg)`,
-              }}
-            >
-              <circle
-                cx="40"
-                cy="40"
-                r="30"
-                fill="none"
-                stroke={`${colors.neonPurple}40`}
-                strokeWidth="2"
-                strokeDasharray="15 8"
-              />
+            <svg width="100" height="100" style={{ position: "absolute", transform: `rotate(${-frame * 0.7}deg)` }}>
+              <circle cx="50" cy="50" r="42" fill="none" stroke={`${colors.neonPurple}40`} strokeWidth="2" strokeDasharray="10 5" />
+            </svg>
+            <svg width="100" height="100" style={{ position: "absolute", transform: `rotate(${frame * 1.5}deg)` }}>
+              <circle cx="50" cy="50" r="36" fill="none" stroke={`${colors.neonPink}50`} strokeWidth="2" strokeDasharray="20 10" />
             </svg>
 
-            {/* Center number */}
+            {/* Center content */}
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <span style={{ fontSize: "10px", color: colors.textMuted, letterSpacing: "2px" }}>SECTION</span>
+              <GlitchText
+                text={String(subsection + 1).padStart(2, "0")}
+                frame={frame}
+                color={colors.neonPink}
+                size="32px"
+              />
+            </div>
+          </div>
+
+          {/* Animated title */}
+          <div>
+            <div style={{ display: "flex", overflow: "hidden" }}>
+              {title.split("").map((letter, i) => {
+                const letterProgress = spring({
+                  frame: frame - i * letterDelay,
+                  fps,
+                  config: { damping: 15, stiffness: 150 },
+                });
+                const y = interpolate(letterProgress, [0, 1], [50, 0]);
+                const opacity = interpolate(letterProgress, [0, 1], [0, 1]);
+                const rotate = interpolate(letterProgress, [0, 1], [-20, 0]);
+
+                return (
+                  <span
+                    key={i}
+                    style={{
+                      display: "inline-block",
+                      fontSize: "52px",
+                      fontWeight: "900",
+                      color: colors.white,
+                      transform: `translateY(${y}px) rotate(${rotate}deg)`,
+                      opacity,
+                      textShadow: `0 0 30px ${colors.neonPink}50`,
+                      marginRight: letter === " " ? "15px" : "2px",
+                    }}
+                  >
+                    {letter}
+                  </span>
+                );
+              })}
+            </div>
+            <div
+              style={{
+                fontSize: "16px",
+                color: colors.textMuted,
+                marginTop: "8px",
+                display: "flex",
+                alignItems: "center",
+                gap: "15px",
+              }}
+            >
+              <span>Displaying choices</span>
+              <span
+                style={{
+                  background: `linear-gradient(90deg, ${colors.neonPink}, ${colors.neonOrange})`,
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  fontWeight: "800",
+                  fontSize: "20px",
+                }}
+              >
+                {startIdx + 1}-{endIdx}
+              </span>
+              <span>of {total}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right - progress visualization */}
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: "11px", color: colors.textMuted, letterSpacing: "2px", marginBottom: "12px" }}>
+            PROGRESS
+          </div>
+          {/* Circular progress */}
+          <div style={{ position: "relative", width: "80px", height: "80px", marginLeft: "auto" }}>
+            <svg width="80" height="80" style={{ transform: "rotate(-90deg)" }}>
+              <circle cx="40" cy="40" r="35" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="6" />
+              <circle
+                cx="40"
+                cy="40"
+                r="35"
+                fill="none"
+                stroke={`url(#progressGrad)`}
+                strokeWidth="6"
+                strokeDasharray={`${(subsection + 1) / TOTAL_SUBSECTIONS * 220} 220`}
+                strokeLinecap="round"
+              />
+              <defs>
+                <linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor={colors.neonPink} />
+                  <stop offset="100%" stopColor={colors.neonOrange} />
+                </linearGradient>
+              </defs>
+            </svg>
             <div
               style={{
                 position: "absolute",
@@ -487,106 +676,36 @@ const SectionTitle: React.FC<{ frame: number; fps: number; subsection: number; s
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "28px",
-                fontWeight: "900",
-                color: colors.neonPink,
-                textShadow: `0 0 20px ${colors.neonPink}80`,
-                transform: `translateX(${glitchOffset}px)`,
+                fontSize: "18px",
+                fontWeight: "800",
+                color: colors.white,
               }}
             >
-              {String(subsection + 1).padStart(2, "0")}
+              {Math.round(((subsection + 1) / TOTAL_SUBSECTIONS) * 100)}%
             </div>
-          </div>
-
-          <div>
-            <h1
-              style={{
-                fontSize: "48px",
-                fontWeight: "900",
-                margin: 0,
-                background: `linear-gradient(90deg, ${colors.white}, ${colors.neonPink})`,
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
-              FILLED CHOICES
-            </h1>
-            <p
-              style={{
-                fontSize: "16px",
-                color: colors.textMuted,
-                margin: "6px 0 0 2px",
-                fontWeight: "500",
-              }}
-            >
-              Showing choices{" "}
-              <span style={{ color: colors.neonPink, fontWeight: "700" }}>
-                {startIdx + 1}-{endIdx}
-              </span>{" "}
-              of <span style={{ color: colors.white }}>{total}</span>
-            </p>
-          </div>
-        </div>
-
-        {/* Right side - progress */}
-        <div
-          style={{
-            textAlign: "right",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "12px",
-              color: colors.textMuted,
-              letterSpacing: "2px",
-              marginBottom: "8px",
-            }}
-          >
-            SECTION PROGRESS
-          </div>
-          <div style={{ display: "flex", gap: "4px", justifyContent: "flex-end" }}>
-            {Array.from({ length: TOTAL_SUBSECTIONS }).map((_, i) => (
-              <div
-                key={i}
-                style={{
-                  width: i === subsection ? "24px" : "8px",
-                  height: "8px",
-                  borderRadius: "4px",
-                  background:
-                    i === subsection
-                      ? `linear-gradient(90deg, ${colors.neonPink}, ${colors.neonOrange})`
-                      : i < subsection
-                      ? colors.neonPink
-                      : "rgba(255,255,255,0.2)",
-                  boxShadow: i === subsection ? `0 0 15px ${colors.neonPink}` : "none",
-                  transition: "all 0.3s ease",
-                }}
-              />
-            ))}
           </div>
         </div>
       </div>
 
-      {/* Animated line */}
-      <div
-        style={{
-          marginTop: "24px",
-          height: "2px",
-          background: `linear-gradient(90deg, transparent, ${colors.neonPink}, ${colors.neonPurple}, transparent)`,
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        {/* Moving highlight */}
+      {/* Animated divider line */}
+      <div style={{ marginTop: "25px", position: "relative", height: "3px" }}>
         <div
           style={{
             position: "absolute",
-            top: 0,
-            left: `${(frame % 200) - 50}%`,
+            inset: 0,
+            background: `linear-gradient(90deg, transparent, ${colors.neonPink}50, ${colors.neonPurple}50, transparent)`,
+          }}
+        />
+        {/* Moving pulse */}
+        <div
+          style={{
+            position: "absolute",
+            top: "-2px",
+            left: `${(frame * 0.5) % 100}%`,
             width: "100px",
-            height: "100%",
-            background: `linear-gradient(90deg, transparent, ${colors.white}, transparent)`,
+            height: "7px",
+            background: `radial-gradient(ellipse, ${colors.white} 0%, transparent 70%)`,
+            filter: "blur(2px)",
           }}
         />
       </div>
@@ -603,57 +722,50 @@ export const FilledChoicesSection: React.FC = () => {
 
   const highlightStartIndex = currentSubsection * CHOICES_PER_SUBSECTION;
   const highlightEndIndex = Math.min(highlightStartIndex + CHOICES_PER_SUBSECTION, filledChoices.choices.length);
-
   const currentChoices = filledChoices.choices.slice(highlightStartIndex, highlightEndIndex);
-
-  // Generate particles
-  const particles = Array.from({ length: 20 }).map((_, i) => ({
-    x: (i * 17 + 10) % 100,
-    y: (i * 23 + 5) % 100,
-    size: 20 + (i % 5) * 15,
-    color: [colors.neonBlue, colors.neonPink, colors.neonPurple, colors.neonGreen][i % 4],
-    delay: i * 20,
-    speed: 0.5 + (i % 3) * 0.3,
-  }));
 
   return (
     <AbsoluteFill
       style={{
         background: `
-          radial-gradient(ellipse at 20% 20%, ${colors.neonPurple}15 0%, transparent 50%),
-          radial-gradient(ellipse at 80% 80%, ${colors.neonBlue}15 0%, transparent 50%),
-          radial-gradient(ellipse at 50% 50%, ${colors.neonPink}08 0%, transparent 60%),
-          linear-gradient(160deg, #05050a 0%, #0a0812 50%, #100818 100%)
+          radial-gradient(ellipse at 0% 0%, ${colors.neonPurple}20 0%, transparent 50%),
+          radial-gradient(ellipse at 100% 100%, ${colors.neonBlue}15 0%, transparent 50%),
+          radial-gradient(ellipse at 50% 50%, ${colors.neonPink}10 0%, transparent 70%),
+          linear-gradient(180deg, #030308 0%, #0a0515 50%, #0f0a1a 100%)
         `,
         overflow: "hidden",
       }}
     >
-      {/* Animated grid background */}
-      <AnimatedGrid frame={frame} />
+      {/* Hexagon grid */}
+      <HexGrid frame={frame} />
 
-      {/* Floating particles */}
-      {particles.map((p, i) => (
-        <Particle key={i} {...p} frame={frame} />
-      ))}
+      {/* DNA Helix */}
+      <DNAHelix frame={frame} />
 
-      {/* Glowing orbs */}
-      <GlowingOrb x={15} y={30} size={300} color={colors.neonPurple} frame={frame} pulseSpeed={0.02} />
-      <GlowingOrb x={85} y={70} size={250} color={colors.neonBlue} frame={frame} pulseSpeed={0.025} />
-      <GlowingOrb x={50} y={50} size={400} color={colors.neonPink} frame={frame} pulseSpeed={0.015} />
+      {/* Morphing blobs */}
+      <MorphingBlob frame={frame} color={colors.neonPurple} x={10} y={20} size={400} speed={0.02} />
+      <MorphingBlob frame={frame} color={colors.neonBlue} x={90} y={80} size={350} speed={0.025} />
+      <MorphingBlob frame={frame} color={colors.neonPink} x={50} y={50} size={500} speed={0.015} />
 
-      {/* Content container */}
+      {/* Scan line */}
+      <ScanLine frame={frame} />
+
+      {/* Electric arcs */}
+      <ElectricArc frame={frame} startX={0} startY={200} endX={200} endY={100} color={colors.neonBlue} />
+      <ElectricArc frame={frame} startX={1920} startY={800} endX={1700} endY={900} color={colors.neonPink} />
+
+      {/* Content */}
       <div
         style={{
           position: "relative",
           zIndex: 10,
-          padding: "50px 70px",
+          padding: "45px 60px",
           height: "100%",
           display: "flex",
           flexDirection: "column",
         }}
       >
-        {/* Animated section title */}
-        <SectionTitle
+        <EpicHeader
           frame={frameInSubsection}
           fps={fps}
           subsection={currentSubsection}
@@ -662,7 +774,6 @@ export const FilledChoicesSection: React.FC = () => {
           total={filledChoices.totalChoices}
         />
 
-        {/* Choice cards */}
         <div style={{ flex: 1 }}>
           {currentChoices.map((choice, idx) => (
             <ChoiceCard
@@ -671,65 +782,44 @@ export const FilledChoicesSection: React.FC = () => {
               index={idx}
               frame={frameInSubsection}
               fps={fps}
-              totalInView={currentChoices.length}
             />
           ))}
         </div>
 
-        {/* Bottom info bar */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            gap: "40px",
-            paddingTop: "20px",
-          }}
-        >
+        {/* Bottom stats */}
+        <div style={{ display: "flex", justifyContent: "center", gap: "50px", paddingTop: "15px" }}>
           {[
             { label: "IIT", count: filledChoices.choices.filter(c => c.institute.includes("Indian Institute of Technology")).length, color: colors.neonBlue },
             { label: "NIT", count: filledChoices.choices.filter(c => c.institute.includes("National Institute of Technology")).length, color: colors.neonGreen },
             { label: "GFTI", count: filledChoices.totalChoices - filledChoices.choices.filter(c => c.institute.includes("Indian Institute of Technology")).length - filledChoices.choices.filter(c => c.institute.includes("National Institute of Technology")).length, color: colors.neonPink },
-          ].map((item, i) => (
-            <div
-              key={item.label}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                opacity: 0.8,
-              }}
-            >
+          ].map((item) => (
+            <div key={item.label} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <div
                 style={{
-                  width: "12px",
-                  height: "12px",
+                  width: "10px",
+                  height: "10px",
                   borderRadius: "50%",
                   background: item.color,
-                  boxShadow: `0 0 10px ${item.color}`,
+                  boxShadow: `0 0 15px ${item.color}`,
+                  animation: "pulse 2s infinite",
                 }}
               />
-              <span style={{ fontSize: "14px", color: colors.textMuted }}>{item.label}</span>
-              <span style={{ fontSize: "18px", fontWeight: "800", color: item.color }}>{item.count}</span>
+              <span style={{ fontSize: "13px", color: colors.textMuted }}>{item.label}</span>
+              <span style={{ fontSize: "20px", fontWeight: "900", color: item.color, textShadow: `0 0 10px ${item.color}50` }}>
+                {item.count}
+              </span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Corner decorations */}
-      <svg
-        style={{ position: "absolute", top: 20, left: 20, opacity: 0.3 }}
-        width="60"
-        height="60"
-      >
-        <path d="M0 30 L30 0 L60 0 L60 10 L35 10 L10 35 L10 60 L0 60 Z" fill={colors.neonPink} />
-      </svg>
-      <svg
-        style={{ position: "absolute", bottom: 20, right: 20, opacity: 0.3, transform: "rotate(180deg)" }}
-        width="60"
-        height="60"
-      >
-        <path d="M0 30 L30 0 L60 0 L60 10 L35 10 L10 35 L10 60 L0 60 Z" fill={colors.neonPurple} />
-      </svg>
+      {/* Corner accents */}
+      <div style={{ position: "absolute", top: 0, left: 0, width: "150px", height: "150px", overflow: "hidden", opacity: 0.4 }}>
+        <div style={{ position: "absolute", top: "-50%", left: "-50%", width: "200%", height: "200%", background: `conic-gradient(from 180deg, transparent, ${colors.neonPink}40, transparent)`, transform: `rotate(${frame}deg)` }} />
+      </div>
+      <div style={{ position: "absolute", bottom: 0, right: 0, width: "150px", height: "150px", overflow: "hidden", opacity: 0.4 }}>
+        <div style={{ position: "absolute", bottom: "-50%", right: "-50%", width: "200%", height: "200%", background: `conic-gradient(from 0deg, transparent, ${colors.neonPurple}40, transparent)`, transform: `rotate(${-frame}deg)` }} />
+      </div>
     </AbsoluteFill>
   );
 };
