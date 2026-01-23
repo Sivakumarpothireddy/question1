@@ -6,49 +6,33 @@ const SUBSECTION_DURATION = 600; // 10 seconds at 60fps
 const CHOICES_PER_SUBSECTION = 3;
 const TOTAL_SUBSECTIONS = 14;
 
-// Animated skill/rank bar component
-const RankBar: React.FC<{
+// Skills bar item - staggered appearance like terminal output
+const SkillBar: React.FC<{
   choice: { no: number; institute: string; program: string };
   index: number;
   frame: number;
   fps: number;
-  cardIndex: number;
-}> = ({ choice, index, frame, fps, cardIndex }) => {
-  const delay = 20 + cardIndex * 25;
+}> = ({ choice, index, frame, fps }) => {
+  const STAGGER_DELAY = 8; // frames between each line appearing (similar to 50ms stagger)
+  const delay = index * STAGGER_DELAY;
 
-  // Bar animation
+  // Fade in
+  const opacity = interpolate(frame, [delay, delay + 15], [0, 1], {
+    extrapolateRight: "clamp",
+    extrapolateLeft: "clamp",
+  });
+
+  // Bar fill animation with spring
   const barProgress = spring({
-    frame: frame - delay,
+    frame: frame - delay - 10,
     fps,
-    config: { damping: 15, stiffness: 80, mass: 0.8 },
-  });
-
-  // Text fade in
-  const textOpacity = interpolate(frame, [delay, delay + 20], [0, 1], {
-    extrapolateRight: "clamp",
-    extrapolateLeft: "clamp",
-  });
-
-  // Slide in from left
-  const slideX = interpolate(frame, [delay, delay + 30], [-50, 0], {
-    extrapolateRight: "clamp",
-    extrapolateLeft: "clamp",
+    config: { damping: 20, stiffness: 100, mass: 0.8 },
   });
 
   const getInstituteColor = (institute: string): string => {
     if (institute.includes("Indian Institute of Technology")) return colors.neonBlue;
     if (institute.includes("National Institute of Technology")) return colors.neonGreen;
     return colors.neonPink;
-  };
-
-  const getInstituteGradient = (institute: string): string => {
-    if (institute.includes("Indian Institute of Technology")) {
-      return `linear-gradient(90deg, ${colors.neonBlue}, ${colors.neonPurple})`;
-    }
-    if (institute.includes("National Institute of Technology")) {
-      return `linear-gradient(90deg, ${colors.neonGreen}, ${colors.neonBlue})`;
-    }
-    return `linear-gradient(90deg, ${colors.neonPink}, ${colors.neonOrange})`;
   };
 
   const getInstituteTag = (institute: string): string => {
@@ -70,111 +54,95 @@ const RankBar: React.FC<{
     .trim();
 
   const color = getInstituteColor(choice.institute);
+  const tag = getInstituteTag(choice.institute);
 
-  // Bar fills to different widths based on choice number (visual effect)
-  const barWidth = Math.max(60, 100 - (choice.no * 1.2));
+  // Bar width based on rank (higher rank = longer bar)
+  const barWidth = Math.max(50, 100 - (choice.no * 1.5));
 
   return (
     <div
       style={{
-        marginBottom: "24px",
-        transform: `translateX(${slideX}px)`,
-        opacity: textOpacity,
+        marginBottom: "32px",
+        opacity,
       }}
     >
-      {/* Top row: Rank and Institute info */}
+      {/* Label row with RANK number */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          marginBottom: "12px",
+          marginBottom: "10px",
           gap: "16px",
         }}
       >
-        {/* Rank badge */}
+        {/* Rank number */}
         <div
           style={{
-            width: "64px",
-            height: "64px",
-            borderRadius: "16px",
-            background: getInstituteGradient(choice.institute),
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-            boxShadow: `0 8px 24px ${color}50`,
+            fontSize: "48px",
+            fontWeight: "900",
+            color: color,
+            minWidth: "70px",
+            textAlign: "right",
+            fontFamily: "monospace",
+            lineHeight: 1,
+            textShadow: `0 0 30px ${color}60`,
           }}
         >
-          <div style={{ textAlign: "center" }}>
-            <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.7)", display: "block" }}>RANK</span>
-            <span style={{ fontSize: "24px", fontWeight: "900", color: colors.white }}>{choice.no}</span>
-          </div>
+          {String(choice.no).padStart(2, "0")}
         </div>
 
+        {/* Vertical divider */}
+        <div
+          style={{
+            width: "3px",
+            height: "50px",
+            background: `linear-gradient(to bottom, ${color}, transparent)`,
+            borderRadius: "2px",
+          }}
+        />
+
         {/* Institute info */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
             <span
               style={{
-                background: `${color}30`,
-                color: color,
-                padding: "4px 12px",
-                borderRadius: "12px",
-                fontSize: "11px",
+                background: color,
+                color: "#000",
+                padding: "3px 10px",
+                borderRadius: "4px",
+                fontSize: "12px",
                 fontWeight: "800",
                 letterSpacing: "0.5px",
               }}
             >
-              {getInstituteTag(choice.institute)}
+              {tag}
             </span>
-            <span style={{ fontSize: "13px", color: colors.textMuted }}>
+            <span style={{ fontSize: "14px", color: colors.textMuted }}>
               {programShort}
             </span>
           </div>
-          <h3
+          <div
             style={{
-              fontSize: "20px",
+              fontSize: "22px",
               fontWeight: "700",
               color: colors.white,
-              margin: 0,
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
             }}
           >
             {instituteShort}
-          </h3>
-        </div>
-
-        {/* Choice number on right */}
-        <div
-          style={{
-            textAlign: "right",
-            flexShrink: 0,
-          }}
-        >
-          <span style={{ fontSize: "12px", color: colors.textMuted }}>Choice</span>
-          <span
-            style={{
-              fontSize: "28px",
-              fontWeight: "900",
-              color: color,
-              display: "block",
-              lineHeight: 1,
-              textShadow: `0 0 20px ${color}50`,
-            }}
-          >
-            #{choice.no}
-          </span>
+          </div>
         </div>
       </div>
 
       {/* Progress bar */}
       <div
         style={{
-          height: "12px",
-          background: "rgba(255,255,255,0.1)",
-          borderRadius: "6px",
+          marginLeft: "89px", // Align with text after rank number
+          height: "16px",
+          background: "rgba(255,255,255,0.08)",
+          borderRadius: "8px",
           overflow: "hidden",
           position: "relative",
         }}
@@ -184,13 +152,13 @@ const RankBar: React.FC<{
           style={{
             width: `${barWidth * barProgress}%`,
             height: "100%",
-            background: getInstituteGradient(choice.institute),
-            borderRadius: "6px",
-            boxShadow: `0 0 20px ${color}60`,
+            background: `linear-gradient(90deg, ${color}, ${color}80)`,
+            borderRadius: "8px",
             position: "relative",
+            boxShadow: `0 0 20px ${color}40`,
           }}
         >
-          {/* Shine effect */}
+          {/* Shine sweep effect */}
           <div
             style={{
               position: "absolute",
@@ -198,26 +166,10 @@ const RankBar: React.FC<{
               left: 0,
               right: 0,
               height: "50%",
-              background: "linear-gradient(to bottom, rgba(255,255,255,0.3), transparent)",
-              borderRadius: "6px 6px 0 0",
+              background: "linear-gradient(to bottom, rgba(255,255,255,0.4), transparent)",
+              borderRadius: "8px 8px 0 0",
             }}
           />
-        </div>
-
-        {/* Percentage text */}
-        <div
-          style={{
-            position: "absolute",
-            right: "10px",
-            top: "50%",
-            transform: "translateY(-50%)",
-            fontSize: "10px",
-            fontWeight: "700",
-            color: colors.white,
-            textShadow: "0 1px 2px rgba(0,0,0,0.5)",
-          }}
-        >
-          {Math.round(barWidth)}%
         </div>
       </div>
     </div>
@@ -236,231 +188,136 @@ export const FilledChoicesSection: React.FC = () => {
 
   const currentChoices = filledChoices.choices.slice(highlightStartIndex, highlightEndIndex);
 
-  const iitCount = filledChoices.choices.filter(c => c.institute.includes("Indian Institute of Technology")).length;
-  const nitCount = filledChoices.choices.filter(c => c.institute.includes("National Institute of Technology")).length;
-  const otherCount = filledChoices.totalChoices - iitCount - nitCount;
-
-  const headerOpacity = interpolate(frame, [0, 30], [0, 1], { extrapolateRight: "clamp" });
-  const headerY = interpolate(frame, [0, 30], [-30, 0], { extrapolateRight: "clamp" });
+  // Header animations
+  const headerOpacity = interpolate(frameInSubsection, [0, 20], [0, 1], { extrapolateRight: "clamp" });
+  const headerY = interpolate(frameInSubsection, [0, 20], [-20, 0], { extrapolateRight: "clamp" });
 
   return (
     <AbsoluteFill
       style={{
         background: "linear-gradient(160deg, #0a0a0f 0%, #0f0a1a 50%, #1a0f1a 100%)",
-        padding: "50px 60px",
+        padding: "60px 80px",
         overflow: "hidden",
       }}
     >
-      {/* Background decoration */}
+      {/* Subtle background glow */}
       <div
         style={{
           position: "absolute",
-          top: "20%",
-          right: "-10%",
-          width: "500px",
-          height: "500px",
+          top: "30%",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "800px",
+          height: "600px",
           borderRadius: "50%",
-          background: `radial-gradient(circle, ${colors.neonPurple}10 0%, transparent 60%)`,
-          filter: "blur(80px)",
-          pointerEvents: "none",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          bottom: "10%",
-          left: "-10%",
-          width: "400px",
-          height: "400px",
-          borderRadius: "50%",
-          background: `radial-gradient(circle, ${colors.neonBlue}10 0%, transparent 60%)`,
-          filter: "blur(80px)",
+          background: `radial-gradient(circle, ${colors.neonPurple}08 0%, transparent 60%)`,
+          filter: "blur(100px)",
           pointerEvents: "none",
         }}
       />
 
-      {/* Header */}
+      {/* Header with RANK title */}
       <div
         style={{
-          marginBottom: "40px",
+          marginBottom: "50px",
           position: "relative",
           zIndex: 10,
           opacity: headerOpacity,
           transform: `translateY(${headerY}px)`,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-            <div
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+          <div>
+            <h1
               style={{
-                background: `linear-gradient(135deg, ${colors.neonPink}, ${colors.neonOrange})`,
-                borderRadius: "14px",
-                padding: "12px 22px",
-                boxShadow: `0 0 30px ${colors.neonPink}50`,
+                fontSize: "72px",
+                fontWeight: "900",
+                color: colors.white,
+                margin: 0,
+                letterSpacing: "-2px",
+                lineHeight: 1,
               }}
             >
-              <span style={{ fontSize: "20px", fontWeight: "800", color: colors.white }}>05</span>
-            </div>
-            <div>
-              <h1 style={{ fontSize: "38px", fontWeight: "800", color: colors.white, margin: 0 }}>
-                Filled Choices
-              </h1>
-              <p style={{ fontSize: "14px", color: colors.textSecondary, margin: "4px 0 0 0" }}>
-                College preferences by priority
-              </p>
-            </div>
+              RANK
+            </h1>
+            <p style={{ fontSize: "18px", color: colors.textMuted, margin: "8px 0 0 4px" }}>
+              Filled Choices • {highlightStartIndex + 1}-{highlightEndIndex} of {filledChoices.totalChoices}
+            </p>
           </div>
 
-          {/* Current viewing badge */}
+          {/* Section indicator */}
           <div
             style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: "16px",
-              padding: "12px 24px",
-              display: "flex",
-              alignItems: "center",
-              gap: "15px",
+              textAlign: "right",
+              opacity: 0.8,
             }}
           >
-            <div style={{ textAlign: "center" }}>
-              <span style={{ fontSize: "11px", color: colors.textMuted, display: "block" }}>VIEWING</span>
-              <span style={{ fontSize: "24px", fontWeight: "900", color: colors.neonPink }}>
-                {highlightStartIndex + 1}-{highlightEndIndex}
-              </span>
+            <div style={{ fontSize: "14px", color: colors.textMuted, marginBottom: "4px" }}>
+              SECTION
             </div>
-            <div style={{ width: "1px", height: "40px", background: "rgba(255,255,255,0.1)" }} />
-            <div style={{ textAlign: "center" }}>
-              <span style={{ fontSize: "11px", color: colors.textMuted, display: "block" }}>OF</span>
-              <span style={{ fontSize: "24px", fontWeight: "900", color: colors.white }}>
-                {filledChoices.totalChoices}
-              </span>
+            <div style={{ fontSize: "42px", fontWeight: "900", color: colors.neonPink, lineHeight: 1 }}>
+              {String(currentSubsection + 1).padStart(2, "0")}
+              <span style={{ color: colors.textMuted, fontSize: "24px" }}>/{TOTAL_SUBSECTIONS}</span>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Main content */}
-      <div style={{ display: "flex", gap: "40px", flex: 1, position: "relative", zIndex: 10 }}>
-        {/* Left: Rank bars */}
+        {/* Divider line */}
         <div
           style={{
-            flex: 2,
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: "24px",
-            padding: "30px",
+            marginTop: "24px",
+            height: "2px",
+            background: `linear-gradient(90deg, ${colors.neonPink}, ${colors.neonPurple}, transparent)`,
+            borderRadius: "1px",
+          }}
+        />
+      </div>
+
+      {/* Skills bars */}
+      <div style={{ position: "relative", zIndex: 10 }}>
+        {currentChoices.map((choice, idx) => (
+          <SkillBar
+            key={`${currentSubsection}-${choice.no}`}
+            choice={choice}
+            index={idx}
+            frame={frameInSubsection}
+            fps={fps}
+          />
+        ))}
+      </div>
+
+      {/* Bottom progress indicator */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: "40px",
+          left: "80px",
+          right: "80px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: "8px",
           }}
         >
-          {currentChoices.map((choice, idx) => (
-            <RankBar
-              key={choice.no}
-              choice={choice}
-              index={highlightStartIndex + idx}
-              frame={frameInSubsection}
-              fps={fps}
-              cardIndex={idx}
+          {Array.from({ length: TOTAL_SUBSECTIONS }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                width: i === currentSubsection ? "40px" : "12px",
+                height: "4px",
+                borderRadius: "2px",
+                background: i === currentSubsection
+                  ? `linear-gradient(90deg, ${colors.neonPink}, ${colors.neonOrange})`
+                  : i < currentSubsection
+                    ? colors.neonPink + "60"
+                    : "rgba(255,255,255,0.15)",
+                transition: "all 0.3s ease",
+              }}
             />
           ))}
-        </div>
-
-        {/* Right: Stats panel */}
-        <div style={{ width: "280px", display: "flex", flexDirection: "column", gap: "16px" }}>
-          {/* Section progress */}
-          <div
-            style={{
-              background: `linear-gradient(135deg, ${colors.neonPink}15, ${colors.neonOrange}15)`,
-              border: `1px solid ${colors.neonPink}30`,
-              borderRadius: "20px",
-              padding: "24px",
-              textAlign: "center",
-            }}
-          >
-            <span style={{ fontSize: "11px", color: colors.textMuted, textTransform: "uppercase", letterSpacing: "1px" }}>
-              Section
-            </span>
-            <div style={{ marginTop: "8px" }}>
-              <span style={{ fontSize: "48px", fontWeight: "900", color: colors.neonPink }}>
-                {currentSubsection + 1}
-              </span>
-              <span style={{ fontSize: "24px", fontWeight: "600", color: colors.textSecondary }}>
-                /{TOTAL_SUBSECTIONS}
-              </span>
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: "20px",
-              padding: "20px",
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
-              <span style={{ fontSize: "12px", color: colors.textMuted }}>Progress</span>
-              <span style={{ fontSize: "14px", fontWeight: "700", color: colors.white }}>
-                {Math.round((highlightEndIndex / 41) * 100)}%
-              </span>
-            </div>
-            <div style={{ height: "8px", background: "rgba(255,255,255,0.1)", borderRadius: "4px", overflow: "hidden" }}>
-              <div
-                style={{
-                  width: `${(highlightEndIndex / 41) * 100}%`,
-                  height: "100%",
-                  background: `linear-gradient(90deg, ${colors.neonPink}, ${colors.neonOrange})`,
-                  borderRadius: "4px",
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Distribution */}
-          <div
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: "20px",
-              padding: "20px",
-            }}
-          >
-            <span style={{ fontSize: "11px", color: colors.textMuted, textTransform: "uppercase", letterSpacing: "1px" }}>
-              Distribution
-            </span>
-            <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: colors.neonBlue }} />
-                <span style={{ fontSize: "14px", color: colors.textSecondary, flex: 1 }}>IITs</span>
-                <span style={{ fontSize: "18px", fontWeight: "800", color: colors.neonBlue }}>{iitCount}</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: colors.neonGreen }} />
-                <span style={{ fontSize: "14px", color: colors.textSecondary, flex: 1 }}>NITs</span>
-                <span style={{ fontSize: "18px", fontWeight: "800", color: colors.neonGreen }}>{nitCount}</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: colors.neonPink }} />
-                <span style={{ fontSize: "14px", color: colors.textSecondary, flex: 1 }}>Others</span>
-                <span style={{ fontSize: "18px", fontWeight: "800", color: colors.neonPink }}>{otherCount}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Legend */}
-          <div
-            style={{
-              background: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.06)",
-              borderRadius: "16px",
-              padding: "16px",
-              fontSize: "12px",
-              color: colors.textMuted,
-              lineHeight: 1.5,
-            }}
-          >
-            <strong style={{ color: colors.textSecondary }}>Note:</strong> Bar length indicates preference priority. Higher ranked choices are attempted first during seat allocation.
-          </div>
         </div>
       </div>
     </AbsoluteFill>
