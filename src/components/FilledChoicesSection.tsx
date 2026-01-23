@@ -21,21 +21,30 @@ export const FilledChoicesSection: React.FC = () => {
   const highlightStartIndex = currentSubsection * CHOICES_PER_SUBSECTION;
   const highlightEndIndex = Math.min(highlightStartIndex + CHOICES_PER_SUBSECTION, filledChoices.choices.length);
 
-  // Calculate scroll position to CENTER highlighted choices in the visible area
-  // Visible area is approximately 650px, so we want highlighted choices centered
-  const VISIBLE_HEIGHT = 650;
+  // Calculate scroll position to show highlighted choices with 3 rows above them
+  // This ensures highlighted choices are always visible and never go above screen
+  const ROWS_ABOVE_HIGHLIGHTED = 3; // Always show 3 non-highlighted rows above
+  const VISIBLE_HEIGHT = 650; // Approximate visible area height
+  const ROW_WITH_MARGIN = ROW_HEIGHT + 8;
+
   const getScrollPosition = (subsection: number) => {
     const targetIndex = subsection * CHOICES_PER_SUBSECTION;
+
     // Calculate position of the first highlighted choice
-    let position = 0;
-    for (let i = 0; i < targetIndex; i++) {
-      position += ROW_HEIGHT + 8; // row height + margin
-    }
-    // Calculate height of the 3 highlighted rows
-    const highlightedHeight = CHOICES_PER_SUBSECTION * (ROW_HEIGHT + 8);
-    // Center the highlighted choices: scroll to position minus half visible area plus half highlighted height
-    const centeredPosition = position - (VISIBLE_HEIGHT / 2) + (highlightedHeight / 2);
-    return Math.max(0, centeredPosition);
+    let highlightedPosition = targetIndex * ROW_WITH_MARGIN;
+
+    // We want 3 rows visible above the highlighted section
+    // So scroll position = highlighted position - (3 rows height)
+    const scrollWithRowsAbove = highlightedPosition - (ROWS_ABOVE_HIGHLIGHTED * ROW_WITH_MARGIN);
+
+    // Calculate maximum scroll (don't scroll past the point where last items would go above)
+    // Total content height
+    const totalContentHeight = filledChoices.choices.length * ROW_WITH_MARGIN;
+    // Max scroll = total height - visible height (with some padding)
+    const maxScroll = Math.max(0, totalContentHeight - VISIBLE_HEIGHT + 50);
+
+    // Return scroll position: minimum 0, maximum maxScroll
+    return Math.max(0, Math.min(scrollWithRowsAbove, maxScroll));
   };
 
   const targetScrollY = getScrollPosition(currentSubsection);
