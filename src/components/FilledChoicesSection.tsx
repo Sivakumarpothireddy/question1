@@ -1,43 +1,26 @@
-import { AbsoluteFill, interpolate, useCurrentFrame, spring, useVideoConfig } from "remotion";
+import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
 import { colors } from "../styles";
 import { filledChoices } from "../data";
 
-const SUBSECTION_DURATION = 600; // 10 seconds at 60fps
-const CHOICES_PER_SUBSECTION = 3;
-const ROW_HEIGHT = 120; // Height of each row
+const ROW_HEIGHT = 110;
+const TOTAL_DURATION = 8400; // 14 sections * 600 frames
 
 export const FilledChoicesSection: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
 
-  // Calculate current subsection and scroll position
-  const currentSubsection = Math.min(Math.floor(frame / SUBSECTION_DURATION), 13);
-  const frameInSubsection = frame % SUBSECTION_DURATION;
+  // Continuous smooth scroll from start to end
+  const totalScrollDistance = (filledChoices.choices.length - 3) * ROW_HEIGHT;
+  const scrollY = interpolate(frame, [0, TOTAL_DURATION], [0, totalScrollDistance], {
+    extrapolateRight: "clamp",
+  });
 
-  // Smooth scroll: animate between subsections
-  const baseScroll = currentSubsection * CHOICES_PER_SUBSECTION * ROW_HEIGHT;
-
-  // Transition starts 1 second before subsection ends
-  const transitionStart = SUBSECTION_DURATION - 60;
-  const transitionProgress = frameInSubsection >= transitionStart
-    ? spring({
-        frame: frameInSubsection - transitionStart,
-        fps,
-        config: { damping: 30, stiffness: 80, mass: 1 },
-      })
-    : 0;
-
-  // Scroll position with smooth transition to next section
-  const scrollY = baseScroll + (transitionProgress * CHOICES_PER_SUBSECTION * ROW_HEIGHT);
-
-  // Which choices are currently highlighted
-  const highlightStart = currentSubsection * CHOICES_PER_SUBSECTION;
-  const highlightEnd = Math.min(highlightStart + CHOICES_PER_SUBSECTION, 41);
+  // Which row is at the top of the highlight zone
+  const topHighlightRow = scrollY / ROW_HEIGHT;
 
   return (
     <AbsoluteFill
       style={{
-        background: "linear-gradient(180deg, #0a0a12 0%, #12121a 100%)",
+        background: "linear-gradient(180deg, #08080f 0%, #0f0f18 100%)",
         fontFamily: "'Inter', sans-serif",
       }}
     >
@@ -48,8 +31,8 @@ export const FilledChoicesSection: React.FC = () => {
           top: 0,
           left: 0,
           right: 0,
-          padding: "30px 50px",
-          background: "linear-gradient(180deg, #0a0a12 0%, transparent 100%)",
+          padding: "25px 50px",
+          background: "linear-gradient(180deg, #08080f 0%, transparent 100%)",
           zIndex: 100,
           display: "flex",
           justifyContent: "space-between",
@@ -66,64 +49,45 @@ export const FilledChoicesSection: React.FC = () => {
           >
             <span style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>05</span>
           </div>
-          <div>
-            <h1 style={{ fontSize: 32, fontWeight: 800, color: "#fff", margin: 0 }}>
-              Filled Choices
-            </h1>
-            <p style={{ fontSize: 14, color: colors.textMuted, margin: "4px 0 0 0" }}>
-              {highlightStart + 1}-{highlightEnd} of {filledChoices.totalChoices} preferences
-            </p>
-          </div>
+          <h1 style={{ fontSize: 32, fontWeight: 800, color: "#fff", margin: 0 }}>
+            Filled Choices
+          </h1>
         </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ textAlign: "right" }}>
-            <p style={{ fontSize: 10, color: colors.textMuted, margin: 0 }}>SECTION</p>
-            <p style={{ fontSize: 24, fontWeight: 900, color: colors.neonPink, margin: 0 }}>
-              {currentSubsection + 1}/14
-            </p>
-          </div>
-        </div>
+        <p style={{ fontSize: 16, color: colors.textMuted, margin: 0 }}>
+          {filledChoices.totalChoices} preferences
+        </p>
       </div>
 
-      {/* Scrolling list container */}
+      {/* Scrolling list */}
       <div
         style={{
           position: "absolute",
-          top: 120,
-          bottom: 80,
-          left: 50,
-          right: 50,
+          top: 90,
+          bottom: 0,
+          left: 40,
+          right: 40,
           overflow: "hidden",
         }}
       >
-        {/* The scrolling content */}
-        <div
-          style={{
-            transform: `translateY(${-scrollY + 200}px)`,
-            transition: "transform 0.1s linear",
-          }}
-        >
+        <div style={{ transform: `translateY(${-scrollY + 150}px)` }}>
           {filledChoices.choices.map((choice, index) => {
-            const isHighlighted = index >= highlightStart && index < highlightEnd;
+            // Calculate how "highlighted" this row is based on scroll position
+            const distanceFromCenter = Math.abs(index - (topHighlightRow + 1.5));
+            const isHighlighted = distanceFromCenter < 1.5;
+            const highlightAmount = isHighlighted ? 1 - (distanceFromCenter / 1.5) : 0;
 
-            // Color based on institute
-            const getColor = () => {
-              if (choice.institute.includes("Indian Institute of Technology")) return colors.neonBlue;
-              if (choice.institute.includes("National Institute of Technology")) return colors.neonGreen;
-              return colors.neonPink;
-            };
+            const accentColor = choice.institute.includes("Indian Institute of Technology")
+              ? colors.neonBlue
+              : choice.institute.includes("National Institute of Technology")
+              ? colors.neonGreen
+              : colors.neonPink;
 
-            const getTag = () => {
-              if (choice.institute.includes("Indian Institute of Technology")) return "IIT";
-              if (choice.institute.includes("National Institute of Technology")) return "NIT";
-              return "GFTI";
-            };
+            const tag = choice.institute.includes("Indian Institute of Technology")
+              ? "IIT"
+              : choice.institute.includes("National Institute of Technology")
+              ? "NIT"
+              : "GFTI";
 
-            const accentColor = getColor();
-            const tag = getTag();
-
-            // Shorten names
             const shortInstitute = choice.institute
               .replace("Indian Institute of Technology", "IIT")
               .replace("National Institute of Technology", "NIT")
@@ -140,36 +104,31 @@ export const FilledChoicesSection: React.FC = () => {
                 key={choice.no}
                 style={{
                   height: ROW_HEIGHT,
-                  padding: "10px 0",
+                  padding: "8px 0",
                   boxSizing: "border-box",
                 }}
               >
                 <div
                   style={{
                     height: "100%",
-                    background: isHighlighted
-                      ? `linear-gradient(90deg, ${accentColor}15, transparent)`
-                      : "rgba(255,255,255,0.02)",
-                    border: isHighlighted
-                      ? `2px solid ${accentColor}50`
-                      : "1px solid rgba(255,255,255,0.05)",
-                    borderRadius: 16,
-                    padding: "0 24px",
+                    background: `linear-gradient(90deg, ${accentColor}${Math.floor(highlightAmount * 20).toString(16).padStart(2, '0')}, transparent)`,
+                    border: `${highlightAmount > 0.3 ? 2 : 1}px solid ${accentColor}${Math.floor(highlightAmount * 80 + 10).toString(16).padStart(2, '0')}`,
+                    borderRadius: 14,
+                    padding: "0 20px",
                     display: "flex",
                     alignItems: "center",
-                    gap: 20,
-                    opacity: isHighlighted ? 1 : 0.4,
-                    transform: isHighlighted ? "scale(1)" : "scale(0.96)",
-                    transition: "all 0.3s ease",
+                    gap: 16,
+                    opacity: 0.3 + highlightAmount * 0.7,
+                    transform: `scale(${0.95 + highlightAmount * 0.05})`,
                   }}
                 >
-                  {/* Rank number */}
+                  {/* Rank */}
                   <div
                     style={{
-                      width: 50,
-                      height: 50,
+                      width: 44,
+                      height: 44,
                       borderRadius: "50%",
-                      background: isHighlighted
+                      background: highlightAmount > 0.5
                         ? `linear-gradient(135deg, ${accentColor}, ${colors.neonPurple})`
                         : "rgba(255,255,255,0.1)",
                       display: "flex",
@@ -178,13 +137,7 @@ export const FilledChoicesSection: React.FC = () => {
                       flexShrink: 0,
                     }}
                   >
-                    <span
-                      style={{
-                        fontSize: 18,
-                        fontWeight: 900,
-                        color: isHighlighted ? "#fff" : colors.textMuted,
-                      }}
-                    >
+                    <span style={{ fontSize: 16, fontWeight: 900, color: highlightAmount > 0.5 ? "#fff" : colors.textMuted }}>
                       {String(choice.no).padStart(2, "0")}
                     </span>
                   </div>
@@ -192,11 +145,11 @@ export const FilledChoicesSection: React.FC = () => {
                   {/* Tag */}
                   <div
                     style={{
-                      background: isHighlighted ? accentColor : "rgba(255,255,255,0.1)",
-                      color: isHighlighted ? "#000" : colors.textMuted,
-                      padding: "4px 12px",
+                      background: highlightAmount > 0.5 ? accentColor : "rgba(255,255,255,0.1)",
+                      color: highlightAmount > 0.5 ? "#000" : colors.textMuted,
+                      padding: "4px 10px",
                       borderRadius: 6,
-                      fontSize: 11,
+                      fontSize: 10,
                       fontWeight: 800,
                       flexShrink: 0,
                     }}
@@ -204,51 +157,37 @@ export const FilledChoicesSection: React.FC = () => {
                     {tag}
                   </div>
 
-                  {/* College - left side */}
+                  {/* College */}
                   <div style={{ flex: 1.2, minWidth: 0 }}>
-                    <p style={{ fontSize: 10, color: colors.textMuted, margin: "0 0 4px 0", fontWeight: 700 }}>
-                      COLLEGE
-                    </p>
-                    <p
-                      style={{
-                        fontSize: isHighlighted ? 16 : 14,
-                        fontWeight: isHighlighted ? 700 : 500,
-                        color: isHighlighted ? "#fff" : colors.textMuted,
-                        margin: 0,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
+                    <p style={{ fontSize: 9, color: colors.textMuted, margin: "0 0 2px 0", fontWeight: 700 }}>COLLEGE</p>
+                    <p style={{
+                      fontSize: 14 + highlightAmount * 2,
+                      fontWeight: highlightAmount > 0.5 ? 700 : 500,
+                      color: highlightAmount > 0.5 ? "#fff" : colors.textMuted,
+                      margin: 0,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}>
                       {shortInstitute}
                     </p>
                   </div>
 
                   {/* Divider */}
-                  <div
-                    style={{
-                      width: 1,
-                      height: 40,
-                      background: isHighlighted ? `${accentColor}40` : "rgba(255,255,255,0.1)",
-                    }}
-                  />
+                  <div style={{ width: 1, height: 35, background: `${accentColor}30` }} />
 
-                  {/* Program - right side */}
+                  {/* Program */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 10, color: colors.textMuted, margin: "0 0 4px 0", fontWeight: 700 }}>
-                      PROGRAM
-                    </p>
-                    <p
-                      style={{
-                        fontSize: isHighlighted ? 14 : 12,
-                        fontWeight: isHighlighted ? 600 : 400,
-                        color: isHighlighted ? colors.neonPurple : colors.textMuted,
-                        margin: 0,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
+                    <p style={{ fontSize: 9, color: colors.textMuted, margin: "0 0 2px 0", fontWeight: 700 }}>PROGRAM</p>
+                    <p style={{
+                      fontSize: 12 + highlightAmount * 2,
+                      fontWeight: highlightAmount > 0.5 ? 600 : 400,
+                      color: highlightAmount > 0.5 ? colors.neonPurple : colors.textMuted,
+                      margin: 0,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}>
                       {shortProgram}
                     </p>
                   </div>
@@ -259,31 +198,29 @@ export const FilledChoicesSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Bottom gradient fade */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: 100,
-          background: "linear-gradient(0deg, #0a0a12 0%, transparent 100%)",
-          zIndex: 50,
-        }}
-      />
+      {/* Top fade */}
+      <div style={{
+        position: "absolute",
+        top: 80,
+        left: 0,
+        right: 0,
+        height: 80,
+        background: "linear-gradient(180deg, #08080f, transparent)",
+        zIndex: 50,
+        pointerEvents: "none",
+      }} />
 
-      {/* Top gradient fade */}
-      <div
-        style={{
-          position: "absolute",
-          top: 100,
-          left: 0,
-          right: 0,
-          height: 50,
-          background: "linear-gradient(180deg, #0a0a12 0%, transparent 100%)",
-          zIndex: 50,
-        }}
-      />
+      {/* Bottom fade */}
+      <div style={{
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 120,
+        background: "linear-gradient(0deg, #08080f, transparent)",
+        zIndex: 50,
+        pointerEvents: "none",
+      }} />
     </AbsoluteFill>
   );
 };
