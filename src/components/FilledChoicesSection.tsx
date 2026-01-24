@@ -1,134 +1,196 @@
 import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig } from "remotion";
-import { colors } from "../styles";
 import { filledChoices } from "../data";
 
 const TOTAL_DURATION = 8400;
-const ROW_HEIGHT = 140;
+const CARD_HEIGHT = 130;
+
+// Light theme colors
+const theme = {
+  bg: "#f8f9fc",
+  card: "#ffffff",
+  cardHover: "#f0f4ff",
+  text: "#1a1a2e",
+  textMuted: "#6b7280",
+  blue: "#3b82f6",
+  green: "#10b981",
+  pink: "#ec4899",
+  purple: "#8b5cf6",
+  border: "#e5e7eb",
+  shadow: "rgba(0,0,0,0.08)",
+};
 
 export const FilledChoicesSection: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Smooth scroll - moves through all 41 choices one by one
+  // Scroll through choices one by one
   const scrollProgress = interpolate(frame, [0, TOTAL_DURATION], [0, filledChoices.choices.length - 1], {
     extrapolateRight: "clamp",
   });
 
-  // Current center choice (the one most in focus)
-  const centerIndex = scrollProgress;
+  const currentIndex = scrollProgress;
 
   return (
     <AbsoluteFill
       style={{
-        background: "#030306",
-        fontFamily: "'Inter', sans-serif",
+        background: `linear-gradient(135deg, ${theme.bg} 0%, #eef2ff 50%, #fdf4ff 100%)`,
+        fontFamily: "'Inter', -apple-system, sans-serif",
         overflow: "hidden",
       }}
     >
-      {/* Ambient glow */}
+      {/* Decorative shapes */}
       <div
         style={{
           position: "absolute",
-          top: "40%",
-          left: "50%",
-          width: 800,
-          height: 400,
-          transform: "translate(-50%, -50%)",
-          background: `radial-gradient(ellipse, ${colors.neonBlue}08 0%, transparent 70%)`,
+          top: -200,
+          right: -200,
+          width: 600,
+          height: 600,
+          borderRadius: "50%",
+          background: `linear-gradient(135deg, ${theme.blue}15, ${theme.purple}10)`,
+          filter: "blur(80px)",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          bottom: -150,
+          left: -150,
+          width: 500,
+          height: 500,
+          borderRadius: "50%",
+          background: `linear-gradient(135deg, ${theme.green}12, ${theme.blue}08)`,
           filter: "blur(60px)",
         }}
       />
+
+      {/* Floating dots pattern */}
+      {Array.from({ length: 20 }).map((_, i) => {
+        const x = (i * 97) % 100;
+        const y = (i * 61) % 100;
+        const size = 4 + (i % 3) * 2;
+        const floatY = Math.sin(frame * 0.02 + i) * 10;
+        return (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              left: `${x}%`,
+              top: `${y}%`,
+              width: size,
+              height: size,
+              borderRadius: "50%",
+              background: i % 2 === 0 ? theme.blue : theme.purple,
+              opacity: 0.15,
+              transform: `translateY(${floatY}px)`,
+            }}
+          />
+        );
+      })}
 
       {/* Header */}
       <div
         style={{
           position: "absolute",
-          top: 30,
+          top: 40,
           left: 60,
           right: 60,
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: "flex-start",
           zIndex: 100,
         }}
       >
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: -0.5 }}>
-            Choice Preferences
-          </h1>
-          <p style={{ fontSize: 13, color: "#666", margin: "6px 0 0 0" }}>
-            41 colleges ranked by priority
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 8 }}>
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                background: `linear-gradient(135deg, ${theme.blue}, ${theme.purple})`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: `0 4px 14px ${theme.blue}40`,
+              }}
+            >
+              <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>05</span>
+            </div>
+            <h1 style={{ fontSize: 32, fontWeight: 800, color: theme.text, margin: 0 }}>
+              College Preferences
+            </h1>
+          </div>
+          <p style={{ fontSize: 15, color: theme.textMuted, margin: 0, marginLeft: 54 }}>
+            Scrolling through {filledChoices.totalChoices} ranked choices
           </p>
         </div>
+
+        {/* Progress indicator */}
         <div
           style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 12,
-            padding: "12px 20px",
+            background: theme.card,
+            borderRadius: 16,
+            padding: "16px 24px",
+            boxShadow: `0 4px 20px ${theme.shadow}`,
+            border: `1px solid ${theme.border}`,
             display: "flex",
             alignItems: "center",
-            gap: 12,
+            gap: 16,
           }}
         >
-          <span style={{ fontSize: 12, color: "#555" }}>CURRENT</span>
-          <span style={{ fontSize: 24, fontWeight: 800, color: colors.neonBlue }}>
-            {String(Math.floor(centerIndex) + 1).padStart(2, "0")}
-          </span>
-          <span style={{ fontSize: 14, color: "#444" }}>/ 41</span>
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontSize: 11, color: theme.textMuted, margin: 0, fontWeight: 600, letterSpacing: 1 }}>
+              VIEWING
+            </p>
+            <p style={{ fontSize: 28, fontWeight: 900, color: theme.blue, margin: "4px 0 0 0" }}>
+              {String(Math.floor(currentIndex) + 1).padStart(2, "0")}
+            </p>
+          </div>
+          <div style={{ width: 1, height: 40, background: theme.border }} />
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontSize: 11, color: theme.textMuted, margin: 0, fontWeight: 600, letterSpacing: 1 }}>
+              TOTAL
+            </p>
+            <p style={{ fontSize: 28, fontWeight: 900, color: theme.textMuted, margin: "4px 0 0 0" }}>
+              41
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Scrolling choices */}
+      {/* Cards container */}
       <div
         style={{
           position: "absolute",
-          top: 120,
-          bottom: 60,
-          left: 0,
-          right: 0,
+          top: 160,
+          bottom: 100,
+          left: 60,
+          right: 60,
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
         {filledChoices.choices.map((choice, index) => {
-          // Distance from the current scroll position
-          const distance = index - centerIndex;
+          const distance = index - currentIndex;
+          if (Math.abs(distance) > 3) return null;
 
-          // Only render choices within view range
-          if (Math.abs(distance) > 4) return null;
-
-          // Calculate visual properties based on distance from center
           const absDistance = Math.abs(distance);
           const isCurrent = absDistance < 0.5;
 
-          // Y position - spread out from center
-          const yOffset = distance * ROW_HEIGHT;
+          // Positioning
+          const yOffset = distance * CARD_HEIGHT;
+          const scale = interpolate(absDistance, [0, 1, 2, 3], [1, 0.92, 0.85, 0.78]);
+          const opacity = interpolate(absDistance, [0, 1, 2, 3], [1, 0.6, 0.3, 0.15]);
+          const xOffset = isCurrent ? 0 : distance > 0 ? 20 : -20;
 
-          // Scale - largest at center
-          const scale = interpolate(absDistance, [0, 1, 2, 3], [1, 0.88, 0.78, 0.7], {
-            extrapolateRight: "clamp",
-          });
-
-          // Opacity - brightest at center
-          const opacity = interpolate(absDistance, [0, 1, 2, 3], [1, 0.5, 0.25, 0.1], {
-            extrapolateRight: "clamp",
-          });
-
-          // Blur for distant items
-          const blur = interpolate(absDistance, [0, 1, 2], [0, 1, 3], {
-            extrapolateRight: "clamp",
-          });
-
-          // Colors
+          // Colors based on institute
           const isIIT = choice.institute.includes("Indian Institute of Technology");
           const isNIT = choice.institute.includes("National Institute of Technology");
-          const accentColor = isIIT ? colors.neonBlue : isNIT ? colors.neonGreen : colors.neonPink;
+          const accentColor = isIIT ? theme.blue : isNIT ? theme.green : theme.pink;
           const tag = isIIT ? "IIT" : isNIT ? "NIT" : "GFTI";
 
-          // Shorten names
           const collegeName = choice.institute
             .replace("Indian Institute of Technology", "IIT")
             .replace("National Institute of Technology", "NIT")
@@ -136,133 +198,124 @@ export const FilledChoicesSection: React.FC = () => {
             .replace("Shri G. S. Institute of Technology and Science", "SGSITS");
 
           const programName = choice.program
-            .replace("(4 Years, Bachelor of Technology)", "")
-            .replace("(5 Years, Bachelor and Master of Technology (Dual Degree))", "• Dual Degree")
-            .replace("(4 Years, Bachelor of Science)", "• B.Sc")
-            .trim();
+            .replace("(4 Years, Bachelor of Technology)", "B.Tech")
+            .replace("(5 Years, Bachelor and Master of Technology (Dual Degree))", "Dual Degree")
+            .replace("(4 Years, Bachelor of Science)", "B.Sc");
 
           return (
             <div
               key={choice.no}
               style={{
                 position: "absolute",
-                transform: `translateY(${yOffset}px) scale(${scale})`,
+                transform: `translateY(${yOffset}px) translateX(${xOffset}px) scale(${scale})`,
                 opacity,
-                filter: blur > 0 ? `blur(${blur}px)` : "none",
-                width: "85%",
-                maxWidth: 1100,
-                zIndex: 100 - Math.floor(absDistance * 10),
-                transition: "filter 0.1s",
+                width: "100%",
+                maxWidth: 1000,
+                zIndex: 50 - Math.floor(absDistance * 10),
               }}
             >
               <div
                 style={{
-                  background: isCurrent
-                    ? `linear-gradient(135deg, rgba(15,15,25,0.95), rgba(20,20,35,0.95))`
-                    : "rgba(10,10,18,0.8)",
-                  border: isCurrent
-                    ? `1px solid ${accentColor}40`
-                    : "1px solid rgba(255,255,255,0.04)",
+                  background: isCurrent ? theme.card : "#ffffff90",
                   borderRadius: 20,
-                  padding: isCurrent ? "28px 36px" : "22px 30px",
+                  padding: "24px 32px",
                   display: "flex",
                   alignItems: "center",
-                  gap: 28,
+                  gap: 24,
                   boxShadow: isCurrent
-                    ? `0 20px 60px rgba(0,0,0,0.5), 0 0 40px ${accentColor}15`
-                    : "0 10px 30px rgba(0,0,0,0.3)",
+                    ? `0 20px 50px ${theme.shadow}, 0 0 0 1px ${accentColor}30`
+                    : `0 8px 24px ${theme.shadow}`,
+                  border: isCurrent ? `2px solid ${accentColor}40` : `1px solid ${theme.border}`,
+                  backdropFilter: "blur(10px)",
                 }}
               >
-                {/* Rank number - large and prominent */}
+                {/* Rank badge */}
                 <div
                   style={{
-                    width: isCurrent ? 72 : 56,
-                    height: isCurrent ? 72 : 56,
+                    width: 64,
+                    height: 64,
                     borderRadius: 16,
                     background: isCurrent
-                      ? `linear-gradient(135deg, ${accentColor}, ${accentColor}99)`
-                      : "rgba(255,255,255,0.05)",
+                      ? `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`
+                      : theme.bg,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    boxShadow: isCurrent ? `0 8px 20px ${accentColor}35` : "none",
                     flexShrink: 0,
-                    boxShadow: isCurrent ? `0 8px 24px ${accentColor}40` : "none",
                   }}
                 >
                   <span
                     style={{
-                      fontSize: isCurrent ? 28 : 22,
+                      fontSize: 24,
                       fontWeight: 900,
-                      color: isCurrent ? "#000" : "#444",
-                      fontFamily: "monospace",
+                      color: isCurrent ? "#fff" : theme.textMuted,
                     }}
                   >
                     {String(choice.no).padStart(2, "0")}
                   </span>
                 </div>
 
-                {/* Institute tag */}
+                {/* Tag */}
                 <div
                   style={{
-                    padding: "8px 16px",
+                    padding: "8px 14px",
                     borderRadius: 8,
-                    background: isCurrent ? `${accentColor}20` : "rgba(255,255,255,0.03)",
-                    border: `1px solid ${isCurrent ? accentColor + "40" : "rgba(255,255,255,0.05)"}`,
+                    background: isCurrent ? `${accentColor}15` : theme.bg,
+                    border: `1px solid ${isCurrent ? accentColor + "30" : theme.border}`,
                     flexShrink: 0,
                   }}
                 >
                   <span
                     style={{
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: 800,
-                      color: isCurrent ? accentColor : "#555",
-                      letterSpacing: 1.5,
+                      color: isCurrent ? accentColor : theme.textMuted,
+                      letterSpacing: 1,
                     }}
                   >
                     {tag}
                   </span>
                 </div>
 
-                {/* College name */}
-                <div style={{ flex: 1.3, minWidth: 0 }}>
+                {/* College */}
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <p
                     style={{
-                      fontSize: isCurrent ? 20 : 16,
-                      fontWeight: isCurrent ? 700 : 500,
-                      color: isCurrent ? "#fff" : "#666",
+                      fontSize: isCurrent ? 20 : 17,
+                      fontWeight: 700,
+                      color: isCurrent ? theme.text : theme.textMuted,
                       margin: 0,
-                      whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
-                      letterSpacing: -0.3,
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {collegeName}
                   </p>
                 </div>
 
-                {/* Separator */}
+                {/* Divider */}
                 <div
                   style={{
-                    width: 1,
-                    height: 40,
-                    background: isCurrent
-                      ? `linear-gradient(180deg, transparent, ${accentColor}30, transparent)`
-                      : "rgba(255,255,255,0.06)",
+                    width: 2,
+                    height: 36,
+                    borderRadius: 1,
+                    background: isCurrent ? `${accentColor}30` : theme.border,
                   }}
                 />
 
-                {/* Program name */}
-                <div style={{ flex: 1, minWidth: 0 }}>
+                {/* Program */}
+                <div style={{ flex: 0.8, minWidth: 0 }}>
                   <p
                     style={{
                       fontSize: isCurrent ? 16 : 14,
-                      fontWeight: isCurrent ? 500 : 400,
-                      color: isCurrent ? accentColor : "#555",
+                      fontWeight: 600,
+                      color: isCurrent ? accentColor : theme.textMuted,
                       margin: 0,
-                      whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {programName}
@@ -274,27 +327,71 @@ export const FilledChoicesSection: React.FC = () => {
         })}
       </div>
 
-      {/* Progress bar at bottom */}
+      {/* Progress bar */}
       <div
         style={{
           position: "absolute",
-          bottom: 30,
+          bottom: 40,
           left: 60,
           right: 60,
-          height: 3,
-          background: "rgba(255,255,255,0.06)",
-          borderRadius: 2,
+          display: "flex",
+          alignItems: "center",
+          gap: 20,
         }}
       >
         <div
           style={{
-            width: `${(scrollProgress / 40) * 100}%`,
-            height: "100%",
-            background: `linear-gradient(90deg, ${colors.neonBlue}, ${colors.neonPurple})`,
-            borderRadius: 2,
-            boxShadow: `0 0 20px ${colors.neonBlue}50`,
+            flex: 1,
+            height: 6,
+            background: theme.border,
+            borderRadius: 3,
+            overflow: "hidden",
           }}
-        />
+        >
+          <div
+            style={{
+              width: `${((currentIndex + 1) / 41) * 100}%`,
+              height: "100%",
+              background: `linear-gradient(90deg, ${theme.blue}, ${theme.purple})`,
+              borderRadius: 3,
+              boxShadow: `0 0 12px ${theme.blue}50`,
+            }}
+          />
+        </div>
+        <span style={{ fontSize: 14, fontWeight: 700, color: theme.textMuted, minWidth: 50 }}>
+          {Math.round(((currentIndex + 1) / 41) * 100)}%
+        </span>
+      </div>
+
+      {/* Legend */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 40,
+          right: 60,
+          display: "flex",
+          gap: 20,
+        }}
+      >
+        {[
+          { tag: "IIT", color: theme.blue },
+          { tag: "NIT", color: theme.green },
+          { tag: "GFTI", color: theme.pink },
+        ].map((item) => (
+          <div key={item.tag} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: 3,
+                background: item.color,
+              }}
+            />
+            <span style={{ fontSize: 12, fontWeight: 600, color: theme.textMuted }}>
+              {item.tag}
+            </span>
+          </div>
+        ))}
       </div>
     </AbsoluteFill>
   );
