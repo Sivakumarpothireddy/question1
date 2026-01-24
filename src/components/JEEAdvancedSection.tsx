@@ -1,89 +1,15 @@
 import { AbsoluteFill, interpolate, useCurrentFrame, spring, useVideoConfig } from "remotion";
-import { colors } from "../styles";
 import { jeeAdvancedDetails } from "../data";
 
-// Hexagon background pattern
-const HexagonPattern: React.FC<{ frame: number }> = ({ frame }) => {
-  const hexagons = [];
-  for (let i = 0; i < 15; i++) {
-    const x = (i % 5) * 400 + (Math.floor(i / 5) % 2) * 200;
-    const y = Math.floor(i / 5) * 350;
-    const delay = i * 10;
-    const opacity = interpolate(frame, [delay, delay + 40], [0, 0.05], { extrapolateRight: "clamp" });
-    const rotation = interpolate(frame, [0, 600], [0, 30], { extrapolateRight: "clamp" });
-
-    hexagons.push(
-      <div
-        key={i}
-        style={{
-          position: "absolute",
-          left: x,
-          top: y,
-          width: "200px",
-          height: "230px",
-          opacity,
-          transform: `rotate(${rotation}deg)`,
-          background: `conic-gradient(from 0deg, ${colors.neonPurple}20, transparent, ${colors.neonBlue}20, transparent)`,
-          clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
-        }}
-      />
-    );
-  }
-  return <>{hexagons}</>;
-};
-
-// Status badge component
-const StatusBadge: React.FC<{
-  label: string;
-  value: string;
-  icon: string;
-  color: string;
-  delay: number;
-  frame: number;
-  fps: number;
-}> = ({ label, value, icon, color, delay, frame, fps }) => {
-  const scale = spring({
-    frame: frame - delay,
-    fps,
-    config: { damping: 12, stiffness: 100, mass: 0.5 },
-  });
-
-  return (
-    <div
-      style={{
-        background: "rgba(255, 255, 255, 0.03)",
-        border: "1px solid rgba(255, 255, 255, 0.1)",
-        borderRadius: "20px",
-        padding: "24px",
-        textAlign: "center",
-        transform: `scale(${Math.max(0, scale)})`,
-        opacity: scale,
-      }}
-    >
-      <div
-        style={{
-          width: "60px",
-          height: "60px",
-          borderRadius: "50%",
-          background: `linear-gradient(135deg, ${color}40, ${color}20)`,
-          border: `2px solid ${color}`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          margin: "0 auto 16px",
-          fontSize: "28px",
-        }}
-      >
-        {icon}
-      </div>
-      <p style={{ fontSize: "12px", color: colors.textMuted, margin: "0 0 6px 0", textTransform: "uppercase", letterSpacing: "1px" }}>
-        {label}
-      </p>
-      <p style={{ fontSize: "20px", color, margin: 0, fontWeight: "700" }}>
-        {value}
-      </p>
-    </div>
-  );
+const theme = {
+  bg: "#f8fafc",
+  card: "#ffffff",
+  text: "#0f172a",
+  textMuted: "#64748b",
+  purple: "#8b5cf6",
+  pink: "#ec4899",
+  green: "#10b981",
+  border: "#e2e8f0",
 };
 
 export const JEEAdvancedSection: React.FC = () => {
@@ -94,10 +20,7 @@ export const JEEAdvancedSection: React.FC = () => {
   const headerY = interpolate(frame, [0, 30], [-40, 0], { extrapolateRight: "clamp" });
 
   const highlightIndex = Math.floor(
-    interpolate(frame, [60, 500], [0, jeeAdvancedDetails.fields.length], {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-    })
+    interpolate(frame, [60, 500], [0, jeeAdvancedDetails.fields.length], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })
   );
 
   const icons = ["🎫", "📝", "🎖️", "🎨", "👁️", "👀"];
@@ -105,130 +28,59 @@ export const JEEAdvancedSection: React.FC = () => {
   return (
     <AbsoluteFill
       style={{
-        background: "linear-gradient(160deg, #0a0a0f 0%, #1a0a2e 50%, #0a1a2e 100%)",
+        background: `linear-gradient(135deg, ${theme.bg} 0%, #fae8ff 50%, #ede9fe 100%)`,
         padding: "50px 60px",
-        overflow: "hidden",
+        fontFamily: "'Inter', sans-serif",
       }}
     >
-      <HexagonPattern frame={frame} />
-
-      {/* Glowing orbs */}
-      <div
-        style={{
-          position: "absolute",
-          top: "20%",
-          right: "10%",
-          width: "300px",
-          height: "300px",
-          borderRadius: "50%",
-          background: `radial-gradient(circle, ${colors.neonPurple}20 0%, transparent 70%)`,
-          filter: "blur(40px)",
-        }}
-      />
+      {/* Decorative */}
+      <div style={{ position: "absolute", top: "20%", right: "10%", width: 300, height: 300, borderRadius: "50%", background: `${theme.purple}15`, filter: "blur(60px)" }} />
+      <div style={{ position: "absolute", bottom: "20%", left: "10%", width: 250, height: 250, borderRadius: "50%", background: `${theme.pink}15`, filter: "blur(50px)" }} />
 
       {/* Header */}
-      <div
-        style={{
-          opacity: headerOpacity,
-          transform: `translateY(${headerY}px)`,
-          marginBottom: "40px",
-          position: "relative",
-          zIndex: 10,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "20px", justifyContent: "center" }}>
-          <div
-            style={{
-              background: `linear-gradient(135deg, ${colors.neonPurple}, ${colors.neonPink})`,
-              borderRadius: "12px",
-              padding: "10px 20px",
-              boxShadow: `0 0 30px ${colors.neonPurple}50`,
-            }}
-          >
-            <span style={{ fontSize: "18px", fontWeight: "700", color: colors.white }}>02</span>
+      <div style={{ opacity: headerOpacity, transform: `translateY(${headerY}px)`, marginBottom: 40, textAlign: "center" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 16 }}>
+          <div style={{ background: `linear-gradient(135deg, ${theme.purple}, ${theme.pink})`, borderRadius: 12, padding: "10px 20px", boxShadow: `0 4px 20px ${theme.purple}30` }}>
+            <span style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>02</span>
           </div>
-          <h1 style={{ fontSize: "42px", fontWeight: "800", color: colors.white, margin: 0 }}>
-            JEE Advanced Details
-          </h1>
+          <h1 style={{ fontSize: 40, fontWeight: 800, color: theme.text, margin: 0 }}>JEE Advanced Details</h1>
         </div>
-        <p style={{ fontSize: "18px", color: colors.textSecondary, margin: "12px 0 0 0", textAlign: "center" }}>
-          Examination eligibility and medical status
-        </p>
+        <p style={{ fontSize: 16, color: theme.textMuted, marginTop: 10 }}>Examination eligibility and medical status</p>
       </div>
 
-      {/* Main content */}
-      <div style={{ display: "flex", gap: "30px", flex: 1, position: "relative", zIndex: 10 }}>
-        {/* Left: Main data cards */}
+      {/* Content */}
+      <div style={{ display: "flex", gap: 30, flex: 1 }}>
+        {/* Main cards */}
         <div style={{ flex: 2 }}>
-          <div
-            style={{
-              background: "rgba(255, 255, 255, 0.02)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: "24px",
-              padding: "30px",
-              backdropFilter: "blur(10px)",
-            }}
-          >
+          <div style={{ background: theme.card, borderRadius: 24, padding: 30, boxShadow: "0 10px 40px rgba(0,0,0,0.06)" }}>
             {jeeAdvancedDetails.fields.slice(0, 2).map((field, index) => {
-              const isHighlighted = index === highlightIndex;
               const delay = 40 + index * 15;
-              const cardSpring = spring({
-                frame: frame - delay,
-                fps,
-                config: { damping: 12, stiffness: 100, mass: 0.5 },
-              });
+              const cardSpring = spring({ frame: frame - delay, fps, config: { damping: 12, stiffness: 100 } });
+              const isHighlighted = index === highlightIndex;
 
               return (
                 <div
                   key={index}
                   style={{
-                    background: isHighlighted
-                      ? `linear-gradient(135deg, ${colors.neonPurple}15, ${colors.neonBlue}15)`
-                      : "rgba(255, 255, 255, 0.02)",
-                    border: isHighlighted ? `2px solid ${colors.neonPurple}` : "1px solid rgba(255, 255, 255, 0.05)",
-                    borderRadius: "16px",
-                    padding: "24px",
-                    marginBottom: "16px",
+                    background: isHighlighted ? `linear-gradient(135deg, ${theme.purple}10, ${theme.pink}10)` : theme.bg,
+                    border: isHighlighted ? `2px solid ${theme.purple}` : `1px solid ${theme.border}`,
+                    borderRadius: 16,
+                    padding: 24,
+                    marginBottom: 16,
                     display: "flex",
                     alignItems: "center",
-                    gap: "20px",
-                    transform: `translateX(${interpolate(cardSpring, [0, 1], [-50, 0])}px)`,
+                    gap: 20,
                     opacity: cardSpring,
-                    boxShadow: isHighlighted ? `0 0 30px ${colors.neonPurple}30` : "none",
+                    transform: `translateX(${interpolate(cardSpring, [0, 1], [-30, 0])}px)`,
+                    boxShadow: isHighlighted ? `0 8px 30px ${theme.purple}15` : "none",
                   }}
                 >
-                  <div
-                    style={{
-                      width: "56px",
-                      height: "56px",
-                      borderRadius: "16px",
-                      background: isHighlighted
-                        ? `linear-gradient(135deg, ${colors.neonPurple}, ${colors.neonPink})`
-                        : "rgba(255, 255, 255, 0.1)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "24px",
-                      flexShrink: 0,
-                    }}
-                  >
+                  <div style={{ width: 52, height: 52, borderRadius: 14, background: isHighlighted ? `linear-gradient(135deg, ${theme.purple}, ${theme.pink})` : "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
                     {icons[index]}
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: "14px", color: colors.textMuted, margin: "0 0 6px 0" }}>{field.label}</p>
-                    <p
-                      style={{
-                        fontSize: "22px",
-                        color: isHighlighted ? colors.neonPurple : colors.white,
-                        margin: 0,
-                        fontWeight: "600",
-                        fontFamily: "monospace",
-                        letterSpacing: "1px",
-                        textShadow: isHighlighted ? `0 0 20px ${colors.neonPurple}50` : "none",
-                      }}
-                    >
-                      {field.value}
-                    </p>
+                  <div>
+                    <p style={{ fontSize: 13, color: theme.textMuted, margin: "0 0 6px 0" }}>{field.label}</p>
+                    <p style={{ fontSize: 22, color: isHighlighted ? theme.purple : theme.text, margin: 0, fontWeight: 700, fontFamily: "monospace", letterSpacing: 1 }}>{field.value}</p>
                   </div>
                 </div>
               );
@@ -236,61 +88,64 @@ export const JEEAdvancedSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Status badges */}
-        <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", alignContent: "start" }}>
+        {/* Status badges */}
+        <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignContent: "start" }}>
           {jeeAdvancedDetails.fields.slice(2).map((field, index) => {
             const actualIndex = index + 2;
+            const delay = 60 + index * 20;
+            const scale = spring({ frame: frame - delay, fps, config: { damping: 12, stiffness: 100 } });
             const isHighlighted = actualIndex === highlightIndex;
-            const value = field.value;
-            const isYes = value === "YES";
+            const isYes = field.value === "YES";
 
             return (
-              <StatusBadge
+              <div
                 key={actualIndex}
-                label={field.label}
-                value={value}
-                icon={icons[actualIndex]}
-                color={isHighlighted ? colors.neonPurple : isYes ? colors.neonGreen : colors.textSecondary}
-                delay={60 + index * 20}
-                frame={frame}
-                fps={fps}
-              />
+                style={{
+                  background: theme.card,
+                  borderRadius: 20,
+                  padding: 24,
+                  textAlign: "center",
+                  transform: `scale(${Math.max(0, scale)})`,
+                  opacity: scale,
+                  boxShadow: "0 6px 24px rgba(0,0,0,0.06)",
+                  border: isHighlighted ? `2px solid ${theme.purple}` : `1px solid ${theme.border}`,
+                }}
+              >
+                <div style={{ width: 56, height: 56, borderRadius: "50%", background: isHighlighted ? `${theme.purple}20` : theme.bg, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px", fontSize: 26 }}>
+                  {icons[actualIndex]}
+                </div>
+                <p style={{ fontSize: 11, color: theme.textMuted, margin: "0 0 6px 0", textTransform: "uppercase", letterSpacing: 0.5 }}>{field.label}</p>
+                <p style={{ fontSize: 18, color: isHighlighted ? theme.purple : isYes ? theme.green : theme.textMuted, margin: 0, fontWeight: 700 }}>{field.value}</p>
+              </div>
             );
           })}
         </div>
       </div>
 
-      {/* Bottom info bar */}
+      {/* Bottom bar */}
       <div
         style={{
-          marginTop: "30px",
-          background: `linear-gradient(90deg, ${colors.neonPurple}20, ${colors.neonBlue}20)`,
-          border: "1px solid rgba(255, 255, 255, 0.1)",
-          borderRadius: "16px",
-          padding: "20px 30px",
+          marginTop: 30,
+          background: theme.card,
+          borderRadius: 16,
+          padding: "20px 40px",
           display: "flex",
-          alignItems: "center",
           justifyContent: "center",
-          gap: "40px",
+          gap: 60,
+          boxShadow: "0 6px 24px rgba(0,0,0,0.06)",
           opacity: interpolate(frame, [150, 180], [0, 1], { extrapolateRight: "clamp" }),
-          position: "relative",
-          zIndex: 10,
         }}
       >
-        <div style={{ textAlign: "center" }}>
-          <p style={{ fontSize: "12px", color: colors.textMuted, margin: "0 0 4px 0" }}>ELIGIBLE FOR</p>
-          <p style={{ fontSize: "18px", color: colors.neonGreen, margin: 0, fontWeight: "700" }}>IIT Admissions ✓</p>
-        </div>
-        <div style={{ width: "1px", height: "40px", background: "rgba(255,255,255,0.2)" }} />
-        <div style={{ textAlign: "center" }}>
-          <p style={{ fontSize: "12px", color: colors.textMuted, margin: "0 0 4px 0" }}>MEDICAL STATUS</p>
-          <p style={{ fontSize: "18px", color: colors.neonGreen, margin: 0, fontWeight: "700" }}>All Clear ✓</p>
-        </div>
-        <div style={{ width: "1px", height: "40px", background: "rgba(255,255,255,0.2)" }} />
-        <div style={{ textAlign: "center" }}>
-          <p style={{ fontSize: "12px", color: colors.textMuted, margin: "0 0 4px 0" }}>ARCHITECTURE</p>
-          <p style={{ fontSize: "18px", color: colors.textSecondary, margin: 0, fontWeight: "700" }}>Not Applicable</p>
-        </div>
+        {[
+          { label: "ELIGIBLE FOR", value: "IIT Admissions ✓", color: theme.green },
+          { label: "MEDICAL STATUS", value: "All Clear ✓", color: theme.green },
+          { label: "ARCHITECTURE", value: "Not Applicable", color: theme.textMuted },
+        ].map((item, i) => (
+          <div key={i} style={{ textAlign: "center" }}>
+            <p style={{ fontSize: 11, color: theme.textMuted, margin: "0 0 4px 0" }}>{item.label}</p>
+            <p style={{ fontSize: 16, color: item.color, margin: 0, fontWeight: 700 }}>{item.value}</p>
+          </div>
+        ))}
       </div>
     </AbsoluteFill>
   );
