@@ -1,226 +1,301 @@
-import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
+import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig } from "remotion";
 import { colors } from "../styles";
 import { filledChoices } from "../data";
 
-const ROW_HEIGHT = 110;
-const TOTAL_DURATION = 8400; // 14 sections * 600 frames
+const TOTAL_DURATION = 8400;
+const ROW_HEIGHT = 140;
 
 export const FilledChoicesSection: React.FC = () => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
 
-  // Continuous smooth scroll from start to end
-  const totalScrollDistance = (filledChoices.choices.length - 3) * ROW_HEIGHT;
-  const scrollY = interpolate(frame, [0, TOTAL_DURATION], [0, totalScrollDistance], {
+  // Smooth scroll - moves through all 41 choices one by one
+  const scrollProgress = interpolate(frame, [0, TOTAL_DURATION], [0, filledChoices.choices.length - 1], {
     extrapolateRight: "clamp",
   });
 
-  // Which row is at the top of the highlight zone
-  const topHighlightRow = scrollY / ROW_HEIGHT;
+  // Current center choice (the one most in focus)
+  const centerIndex = scrollProgress;
 
   return (
     <AbsoluteFill
       style={{
-        background: "linear-gradient(180deg, #08080f 0%, #0f0f18 100%)",
+        background: "#030306",
         fontFamily: "'Inter', sans-serif",
+        overflow: "hidden",
       }}
     >
+      {/* Ambient glow */}
+      <div
+        style={{
+          position: "absolute",
+          top: "40%",
+          left: "50%",
+          width: 800,
+          height: 400,
+          transform: "translate(-50%, -50%)",
+          background: `radial-gradient(ellipse, ${colors.neonBlue}08 0%, transparent 70%)`,
+          filter: "blur(60px)",
+        }}
+      />
+
       {/* Header */}
       <div
         style={{
           position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          padding: "25px 50px",
-          background: "linear-gradient(180deg, #08080f 0%, transparent 100%)",
-          zIndex: 100,
+          top: 30,
+          left: 60,
+          right: 60,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          zIndex: 100,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div
-            style={{
-              background: `linear-gradient(135deg, ${colors.neonPink}, ${colors.neonPurple})`,
-              borderRadius: 10,
-              padding: "8px 16px",
-            }}
-          >
-            <span style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>05</span>
-          </div>
-          <h1 style={{ fontSize: 32, fontWeight: 800, color: "#fff", margin: 0 }}>
-            Filled Choices
+        <div>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: "#fff", margin: 0, letterSpacing: -0.5 }}>
+            Choice Preferences
           </h1>
+          <p style={{ fontSize: 13, color: "#666", margin: "6px 0 0 0" }}>
+            41 colleges ranked by priority
+          </p>
         </div>
-        <p style={{ fontSize: 16, color: colors.textMuted, margin: 0 }}>
-          {filledChoices.totalChoices} preferences
-        </p>
+        <div
+          style={{
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 12,
+            padding: "12px 20px",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <span style={{ fontSize: 12, color: "#555" }}>CURRENT</span>
+          <span style={{ fontSize: 24, fontWeight: 800, color: colors.neonBlue }}>
+            {String(Math.floor(centerIndex) + 1).padStart(2, "0")}
+          </span>
+          <span style={{ fontSize: 14, color: "#444" }}>/ 41</span>
+        </div>
       </div>
 
-      {/* Scrolling list */}
+      {/* Scrolling choices */}
       <div
         style={{
           position: "absolute",
-          top: 90,
-          bottom: 0,
-          left: 40,
-          right: 40,
-          overflow: "hidden",
+          top: 120,
+          bottom: 60,
+          left: 0,
+          right: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        <div style={{ transform: `translateY(${-scrollY + 150}px)` }}>
-          {filledChoices.choices.map((choice, index) => {
-            // Calculate how "highlighted" this row is based on scroll position
-            const distanceFromCenter = Math.abs(index - (topHighlightRow + 1.5));
-            const isHighlighted = distanceFromCenter < 1.5;
-            const highlightAmount = isHighlighted ? 1 - (distanceFromCenter / 1.5) : 0;
+        {filledChoices.choices.map((choice, index) => {
+          // Distance from the current scroll position
+          const distance = index - centerIndex;
 
-            const accentColor = choice.institute.includes("Indian Institute of Technology")
-              ? colors.neonBlue
-              : choice.institute.includes("National Institute of Technology")
-              ? colors.neonGreen
-              : colors.neonPink;
+          // Only render choices within view range
+          if (Math.abs(distance) > 4) return null;
 
-            const tag = choice.institute.includes("Indian Institute of Technology")
-              ? "IIT"
-              : choice.institute.includes("National Institute of Technology")
-              ? "NIT"
-              : "GFTI";
+          // Calculate visual properties based on distance from center
+          const absDistance = Math.abs(distance);
+          const isCurrent = absDistance < 0.5;
 
-            const shortInstitute = choice.institute
-              .replace("Indian Institute of Technology", "IIT")
-              .replace("National Institute of Technology", "NIT")
-              .replace("Maulana Azad National Institute of Technology", "MANIT")
-              .replace("Shri G. S. Institute of Technology and Science", "SGSITS");
+          // Y position - spread out from center
+          const yOffset = distance * ROW_HEIGHT;
 
-            const shortProgram = choice.program
-              .replace("(4 Years, Bachelor of Technology)", "B.Tech")
-              .replace("(5 Years, Bachelor and Master of Technology (Dual Degree))", "Dual Degree")
-              .replace("(4 Years, Bachelor of Science)", "B.Sc");
+          // Scale - largest at center
+          const scale = interpolate(absDistance, [0, 1, 2, 3], [1, 0.88, 0.78, 0.7], {
+            extrapolateRight: "clamp",
+          });
 
-            return (
+          // Opacity - brightest at center
+          const opacity = interpolate(absDistance, [0, 1, 2, 3], [1, 0.5, 0.25, 0.1], {
+            extrapolateRight: "clamp",
+          });
+
+          // Blur for distant items
+          const blur = interpolate(absDistance, [0, 1, 2], [0, 1, 3], {
+            extrapolateRight: "clamp",
+          });
+
+          // Colors
+          const isIIT = choice.institute.includes("Indian Institute of Technology");
+          const isNIT = choice.institute.includes("National Institute of Technology");
+          const accentColor = isIIT ? colors.neonBlue : isNIT ? colors.neonGreen : colors.neonPink;
+          const tag = isIIT ? "IIT" : isNIT ? "NIT" : "GFTI";
+
+          // Shorten names
+          const collegeName = choice.institute
+            .replace("Indian Institute of Technology", "IIT")
+            .replace("National Institute of Technology", "NIT")
+            .replace("Maulana Azad National Institute of Technology", "MANIT")
+            .replace("Shri G. S. Institute of Technology and Science", "SGSITS");
+
+          const programName = choice.program
+            .replace("(4 Years, Bachelor of Technology)", "")
+            .replace("(5 Years, Bachelor and Master of Technology (Dual Degree))", "• Dual Degree")
+            .replace("(4 Years, Bachelor of Science)", "• B.Sc")
+            .trim();
+
+          return (
+            <div
+              key={choice.no}
+              style={{
+                position: "absolute",
+                transform: `translateY(${yOffset}px) scale(${scale})`,
+                opacity,
+                filter: blur > 0 ? `blur(${blur}px)` : "none",
+                width: "85%",
+                maxWidth: 1100,
+                zIndex: 100 - Math.floor(absDistance * 10),
+                transition: "filter 0.1s",
+              }}
+            >
               <div
-                key={choice.no}
                 style={{
-                  height: ROW_HEIGHT,
-                  padding: "8px 0",
-                  boxSizing: "border-box",
+                  background: isCurrent
+                    ? `linear-gradient(135deg, rgba(15,15,25,0.95), rgba(20,20,35,0.95))`
+                    : "rgba(10,10,18,0.8)",
+                  border: isCurrent
+                    ? `1px solid ${accentColor}40`
+                    : "1px solid rgba(255,255,255,0.04)",
+                  borderRadius: 20,
+                  padding: isCurrent ? "28px 36px" : "22px 30px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 28,
+                  boxShadow: isCurrent
+                    ? `0 20px 60px rgba(0,0,0,0.5), 0 0 40px ${accentColor}15`
+                    : "0 10px 30px rgba(0,0,0,0.3)",
                 }}
               >
+                {/* Rank number - large and prominent */}
                 <div
                   style={{
-                    height: "100%",
-                    background: `linear-gradient(90deg, ${accentColor}${Math.floor(highlightAmount * 20).toString(16).padStart(2, '0')}, transparent)`,
-                    border: `${highlightAmount > 0.3 ? 2 : 1}px solid ${accentColor}${Math.floor(highlightAmount * 80 + 10).toString(16).padStart(2, '0')}`,
-                    borderRadius: 14,
-                    padding: "0 20px",
+                    width: isCurrent ? 72 : 56,
+                    height: isCurrent ? 72 : 56,
+                    borderRadius: 16,
+                    background: isCurrent
+                      ? `linear-gradient(135deg, ${accentColor}, ${accentColor}99)`
+                      : "rgba(255,255,255,0.05)",
                     display: "flex",
                     alignItems: "center",
-                    gap: 16,
-                    opacity: 0.3 + highlightAmount * 0.7,
-                    transform: `scale(${0.95 + highlightAmount * 0.05})`,
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    boxShadow: isCurrent ? `0 8px 24px ${accentColor}40` : "none",
                   }}
                 >
-                  {/* Rank */}
-                  <div
+                  <span
                     style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: "50%",
-                      background: highlightAmount > 0.5
-                        ? `linear-gradient(135deg, ${accentColor}, ${colors.neonPurple})`
-                        : "rgba(255,255,255,0.1)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
+                      fontSize: isCurrent ? 28 : 22,
+                      fontWeight: 900,
+                      color: isCurrent ? "#000" : "#444",
+                      fontFamily: "monospace",
                     }}
                   >
-                    <span style={{ fontSize: 16, fontWeight: 900, color: highlightAmount > 0.5 ? "#fff" : colors.textMuted }}>
-                      {String(choice.no).padStart(2, "0")}
-                    </span>
-                  </div>
+                    {String(choice.no).padStart(2, "0")}
+                  </span>
+                </div>
 
-                  {/* Tag */}
-                  <div
+                {/* Institute tag */}
+                <div
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: 8,
+                    background: isCurrent ? `${accentColor}20` : "rgba(255,255,255,0.03)",
+                    border: `1px solid ${isCurrent ? accentColor + "40" : "rgba(255,255,255,0.05)"}`,
+                    flexShrink: 0,
+                  }}
+                >
+                  <span
                     style={{
-                      background: highlightAmount > 0.5 ? accentColor : "rgba(255,255,255,0.1)",
-                      color: highlightAmount > 0.5 ? "#000" : colors.textMuted,
-                      padding: "4px 10px",
-                      borderRadius: 6,
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: 800,
-                      flexShrink: 0,
+                      color: isCurrent ? accentColor : "#555",
+                      letterSpacing: 1.5,
                     }}
                   >
                     {tag}
-                  </div>
+                  </span>
+                </div>
 
-                  {/* College */}
-                  <div style={{ flex: 1.2, minWidth: 0 }}>
-                    <p style={{ fontSize: 9, color: colors.textMuted, margin: "0 0 2px 0", fontWeight: 700 }}>COLLEGE</p>
-                    <p style={{
-                      fontSize: 14 + highlightAmount * 2,
-                      fontWeight: highlightAmount > 0.5 ? 700 : 500,
-                      color: highlightAmount > 0.5 ? "#fff" : colors.textMuted,
+                {/* College name */}
+                <div style={{ flex: 1.3, minWidth: 0 }}>
+                  <p
+                    style={{
+                      fontSize: isCurrent ? 20 : 16,
+                      fontWeight: isCurrent ? 700 : 500,
+                      color: isCurrent ? "#fff" : "#666",
                       margin: 0,
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
-                    }}>
-                      {shortInstitute}
-                    </p>
-                  </div>
+                      letterSpacing: -0.3,
+                    }}
+                  >
+                    {collegeName}
+                  </p>
+                </div>
 
-                  {/* Divider */}
-                  <div style={{ width: 1, height: 35, background: `${accentColor}30` }} />
+                {/* Separator */}
+                <div
+                  style={{
+                    width: 1,
+                    height: 40,
+                    background: isCurrent
+                      ? `linear-gradient(180deg, transparent, ${accentColor}30, transparent)`
+                      : "rgba(255,255,255,0.06)",
+                  }}
+                />
 
-                  {/* Program */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 9, color: colors.textMuted, margin: "0 0 2px 0", fontWeight: 700 }}>PROGRAM</p>
-                    <p style={{
-                      fontSize: 12 + highlightAmount * 2,
-                      fontWeight: highlightAmount > 0.5 ? 600 : 400,
-                      color: highlightAmount > 0.5 ? colors.neonPurple : colors.textMuted,
+                {/* Program name */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p
+                    style={{
+                      fontSize: isCurrent ? 16 : 14,
+                      fontWeight: isCurrent ? 500 : 400,
+                      color: isCurrent ? accentColor : "#555",
                       margin: 0,
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
-                    }}>
-                      {shortProgram}
-                    </p>
-                  </div>
+                    }}
+                  >
+                    {programName}
+                  </p>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Top fade */}
-      <div style={{
-        position: "absolute",
-        top: 80,
-        left: 0,
-        right: 0,
-        height: 80,
-        background: "linear-gradient(180deg, #08080f, transparent)",
-        zIndex: 50,
-        pointerEvents: "none",
-      }} />
-
-      {/* Bottom fade */}
-      <div style={{
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 120,
-        background: "linear-gradient(0deg, #08080f, transparent)",
-        zIndex: 50,
-        pointerEvents: "none",
-      }} />
+      {/* Progress bar at bottom */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 30,
+          left: 60,
+          right: 60,
+          height: 3,
+          background: "rgba(255,255,255,0.06)",
+          borderRadius: 2,
+        }}
+      >
+        <div
+          style={{
+            width: `${(scrollProgress / 40) * 100}%`,
+            height: "100%",
+            background: `linear-gradient(90deg, ${colors.neonBlue}, ${colors.neonPurple})`,
+            borderRadius: 2,
+            boxShadow: `0 0 20px ${colors.neonBlue}50`,
+          }}
+        />
+      </div>
     </AbsoluteFill>
   );
 };
