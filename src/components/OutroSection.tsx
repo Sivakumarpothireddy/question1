@@ -49,8 +49,8 @@ export const OutroSection: React.FC = () => {
   });
 
   const summaryItems = [
-    { icon: "👤", label: "Candidate", value: "POTHIREDDY SIVAKUMAR REDDY" },
-    { icon: "🎫", label: "Application", value: "250310039497" },
+    { icon: "👤", label: "Candidate", value: "KUNCHE NAGA VARUN SANDEEP" },
+    { icon: "🎫", label: "Application", value: "250310809241" },
     { icon: "🏆", label: "JEE Advanced Rank", value: "8,541 (CRL)" },
     { icon: "📋", label: "Choices Filed", value: "41 Options" },
     { icon: "🔒", label: "Status", value: "System Locked" },
